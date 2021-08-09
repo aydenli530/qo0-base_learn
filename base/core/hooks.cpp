@@ -257,7 +257,7 @@ bool FASTCALL H::hkCreateMove(IClientModeShared* thisptr, int edx, float flInput
 
 	// @note: need do bunnyhop and other movements before prediction
 	CMiscellaneous::Get().Run(pCmd, pLocal, bSendPacket);
-
+	
 	/*
 	 * CL_RunPrediction
 	 * correct prediction when framerate is lower than tickrate
@@ -273,6 +273,9 @@ bool FASTCALL H::hkCreateMove(IClientModeShared* thisptr, int edx, float flInput
 
 		if (C::Get<bool>(Vars.bMiscFakeLag) || C::Get<bool>(Vars.bAntiAim))
 			CMiscellaneous::Get().FakeLag(pLocal, bSendPacket);
+
+		if(C::Get<bool>(Vars.bMiscBacktrack))
+			CLagCompensation::Get().Run(pCmd);
 
 		if (C::Get<bool>(Vars.bRage))
 			CRageBot::Get().Run(pCmd, pLocal, bSendPacket);
@@ -435,6 +438,8 @@ void FASTCALL H::hkFrameStageNotify(IBaseClientDll* thisptr, int edx, EClientFra
 		 * start rendering the scene
 		 * e.g. remove visual punch, thirdperson, other render/update stuff
 		 */
+
+		CLagCompensation::Get().on_fsn();
 
 		 // set max flash alpha
 		*pLocal->GetFlashMaxAlpha() = C::Get<bool>(Vars.bWorld) ? C::Get<int>(Vars.iWorldMaxFlash) * 2.55f : 255.f;

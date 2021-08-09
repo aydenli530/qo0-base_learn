@@ -1,13 +1,18 @@
 #pragma once
 // used: std::deque
 #include <deque>
-
+// used: std::map
+#include <map>
 // used: winapi definitions
 #include "../common.h"
 // used: usercmd
 #include "../sdk/datatypes/usercmd.h"
 // used: netchannel
 #include "../sdk/interfaces/inetchannel.h"
+// used: baseentity
+#include "../sdk/entity.h"
+// used: bone masks, studio classes
+#include "../sdk/studio.h"
 
 #pragma region lagcompensation_definitions
 #define LAG_COMPENSATION_TELEPORTED_DISTANCE_SQR ( 64.0f * 64.0f )
@@ -38,6 +43,15 @@ struct SequenceObject_t
 	float flCurrentTime;
 };
 
+struct backtrack_data 
+{
+	CBaseEntity*        player;
+	float               sim_time;
+	mstudiohitboxset_t* hitboxset;
+	Vector              hitbox_pos;
+	matrix3x4_t         bone_matrix[256];//maybe
+};
+
 // @note: FYI - https://www.unknowncheats.me/forum/counterstrike-global-offensive/280912-road-perfect-aimbot-1-interpolation.html
 
 class CLagCompensation : public CSingleton<CLagCompensation>
@@ -45,17 +59,25 @@ class CLagCompensation : public CSingleton<CLagCompensation>
 public:
 	// Get
 	void Run(CUserCmd* pCmd);
+	void on_fsn();
 
 	// Main
 	void UpdateIncomingSequences(INetChannel* pNetChannel);
 	void ClearIncomingSequences();
 	void AddLatencyToNetChannel(INetChannel* pNetChannel, float flLatency);
 
+	
+
 private:
+	std::map<int, std::deque<backtrack_data>> data = { };
 	// Values
 	std::deque<SequenceObject_t> vecSequences = { };
 	/* our real incoming sequences count */
 	int nRealIncomingSequence = 0;
 	/* count of incoming sequences what we can spike */
 	int nLastIncomingSequence = 0;
+
+	float correct_time = 0.0f;
+	float latency = 0.0f;
+	float lerp_time = 0.0f;
 };

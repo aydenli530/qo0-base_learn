@@ -139,6 +139,20 @@ public:
 		return *this;
 	}
 
+	QAngle clamp()
+	{
+		if (this->x < -89.0f)
+			this->x = -89.0f;
+		if (this->x > 89.0f)
+			this->x = 89.0f;
+		while (this->y < -180.0f)
+			this->y += 360.0f;
+		while (this->y > 180.0f)
+			this->y -= 360.0f;
+		this->z = 0.0f;
+		return *this;
+	}
+
 	QAngle Normalize()
 	{
 		this->x = std::isfinite(this->x) ? std::remainderf(this->x, 360.f) : 0.f;

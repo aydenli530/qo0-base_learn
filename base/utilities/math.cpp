@@ -177,3 +177,7 @@ void M::RotateCenter(const ImVec2& vecCenter, const float flAngle, ImVec2* pOutP
 	pOutPoint->x = x + vecCenter.x;
 	pOutPoint->y = y + vecCenter.y;
 }
+void M::FixAngles(QAngle* angles)
+{
+	angles->clamp();
+}

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 // used: std::array
 #include <array>
 // used: std::vector
@@ -585,6 +585,19 @@ public:
 		// @xref: "effects/nightvision"
 		return MEM::CallVFunc<bool>(this, 157);
 	}
+
+	//void InvalidateBoneCache()
+	//{
+	//	static auto addr = Utils::PatternScan(GetModuleHandleA("client.dll"), "80 3D ? ? ? ? ? 74 16 A1 ? ? ? ? 48 C7 81");
+
+	//	*(int*)((uintptr_t)this + 0xA30) = I::Globals->flFrameTime; //we'll skip occlusion checks now
+	//	*(int*)((uintptr_t)this + 0xA28) = 0;//clear occlusion flags
+
+	//	unsigned long g_iModelBoneCounter = **(unsigned long**)(addr + 10);
+	//	*(unsigned int*)((DWORD)this + 0x2924) = 0xFF7FFFFF; // m_flLastBoneSetupTime = -FLT_MAX;
+	//	*(unsigned int*)((DWORD)this + 0x2690) = (g_iModelBoneCounter - 1); // m_iMostRecentModelBoneCounter = g_iModelBoneCounter - 1;
+
+	//}
 
 	[[nodiscard]] Vector GetEyePosition(bool bShouldCorrect = true)
 	{
