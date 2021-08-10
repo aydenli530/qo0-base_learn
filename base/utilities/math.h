@@ -63,6 +63,7 @@ namespace M
 	/* rotates given center point and outputs to given outpoint by given angle */
 	void	RotateCenter(const ImVec2& vecCenter, const float flAngle, ImVec2* pOutPoint);
 	void FixAngles(QAngle* angles);
+	float fov_to_player(QAngle viewAngle, QAngle aimAngle);
 	// Exports
 	inline RandomSeedFn				RandomSeed;
 	inline RandomFloatFn			RandomFloat;

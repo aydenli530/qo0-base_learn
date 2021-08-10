@@ -1,4 +1,4 @@
-#include "math.h"
+﻿#include "math.h"
 
 // used: modules definitons, convar, globals interfaces
 #include "../core/interfaces.h"
@@ -180,4 +180,11 @@ void M::RotateCenter(const ImVec2& vecCenter, const float flAngle, ImVec2* pOutP
 void M::FixAngles(QAngle* angles)
 {
 	angles->clamp();
+}
+
+float M::fov_to_player(QAngle viewAngle, QAngle aimAngle) {
+	QAngle delta = aimAngle - viewAngle;
+	delta = delta.Clamp();
+	return sqrtf(powf(delta.x, 2.0f) + powf(delta.y, 2.0f));  //pow()用来计算以x 为底的 y 次方值，然后将结果返回。 powf = ( float.x ,float.y)
+															  //distance formula
 }

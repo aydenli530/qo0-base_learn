@@ -23,14 +23,6 @@ bool not_target(CBaseEntity* player) {
 		return entIndex > I::Globals->nMaxClients;
 }
 
-float fov_to_player(QAngle viewAngle, QAngle aimAngle) {
-	QAngle delta = aimAngle - viewAngle;
-	delta = delta.Clamp();
-	return sqrtf(powf(delta.x, 2.0f) + powf(delta.y, 2.0f));  //pow()用来计算以x 为底的 y 次方值，然后将结果返回。 powf = ( float.x ,float.y)
-															  //distance formula
-}
-
-
 void inv_bone_cache(CBaseEntity* player)
 {
 	static DWORD addReady = (DWORD)(MEM::FindPattern(CLIENT_DLL, XorStr("80 3D ? ? ? ? ? 74 16 A1 ? ? ? ? 48 C7 81"))); // @xref: "deffered"
@@ -212,13 +204,15 @@ void CLagCompensation::Run(CUserCmd* pCmd)
 				continue;
 			//處理float型別的取絕對值(非負值)
 
-			M::VectorAngles(bd.hitbox_pos - local_eye_pos, angles);
+			angles = M::CalcAngle(local_eye_pos, bd.hitbox_pos);
+
+			/*M::VectorAngles(bd.hitbox_pos - local_eye_pos, angles);*/
 			//From the differences between the localplayer eye position and the backtrack player hitbox poistion
 			//To calculate the pitch and yaw angles 
 
-			M::FixAngles(&angles);
+			/*M::FixAngles(&angles);*/
 
-			float fov = fov_to_player(pCmd->angViewPoint, angles); // radius = distance from view_angles to angles
+			float fov = M::fov_to_player(pCmd->angViewPoint, angles); // radius = distance from view_angles to angles
 			if (best_fov > fov) { //To update the best_fov until the 
 				best_fov = fov;
 				tick_count = TIME_TO_TICKS(bd.sim_time + lerp_time);
