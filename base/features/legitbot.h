@@ -13,10 +13,12 @@ class CLegitBot : public CSingleton<CLegitBot>
 public:
 	// Get
 	void Run(CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacket);
+	void Gethitbox();
 private:
 	// Main
 	/* aimbot, smooth, etc */
-
+	QAngle Aim;
+	int Hithoxs;
 	// Check
 	/* is entity valid */
 };

@@ -253,6 +253,18 @@ void T::LegitBot()
 				ImGui::PushStyleVar(ImGuiStyleVar_SelectableTextAlign, ImVec2(0.5f, 0.5f));
 				ImGui::Selectable(XorStr("aimbot##legitbot"), &C::Get<bool>(Vars.bLegit), ImGuiSelectableFlags_None, ImVec2(30, 0));
 				ImGui::PopStyleVar();
+				ImGui::SliderInt(XorStr("Fov##legitbot"), &C::Get<int>(Vars.bAimLock), 0, 30, "%dms");
+
+				if (ImGui::BeginMenu(XorStr("Hitbox")))
+				{
+					ImGui::MenuItem(XorStr("head"), nullptr, &C::Get<bool>(Vars.bAimHead));
+					ImGui::MenuItem(XorStr("chest"), nullptr, &C::Get<bool>(Vars.bAimChest));
+					ImGui::MenuItem(XorStr("stomach"), nullptr, &C::Get<bool>(Vars.bAimStomach));
+					ImGui::MenuItem(XorStr("arms"), nullptr, &C::Get<bool>(Vars.bAimArms));
+					ImGui::MenuItem(XorStr("legs"), nullptr, &C::Get<bool>(Vars.bAimLegs));
+					ImGui::EndMenu();
+				}
+
 				ImGui::EndMenuBar();
 			}
 

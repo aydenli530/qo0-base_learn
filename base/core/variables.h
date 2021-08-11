@@ -87,6 +87,12 @@ struct Variables_t
 	#pragma region variables_legit
 	// aimbot
 	C_ADD_VARIABLE(bool, bLegit, false);
+	C_ADD_VARIABLE(int, bAimLock, 0);
+	C_ADD_VARIABLE(bool, bAimHead, true);
+	C_ADD_VARIABLE(bool, bAimChest, true);
+	C_ADD_VARIABLE(bool, bAimStomach, true);
+	C_ADD_VARIABLE(bool, bAimArms, false);
+	C_ADD_VARIABLE(bool, bAimLegs, false);
 
 	// trigger
 	C_ADD_VARIABLE(bool, bTrigger, false);
