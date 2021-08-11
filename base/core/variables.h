@@ -88,11 +88,14 @@ struct Variables_t
 	// aimbot
 	C_ADD_VARIABLE(bool, bLegit, false);
 	C_ADD_VARIABLE(int, bAimLock, 0);
-	C_ADD_VARIABLE(bool, bAimHead, true);
-	C_ADD_VARIABLE(bool, bAimChest, true);
-	C_ADD_VARIABLE(bool, bAimStomach, true);
+	C_ADD_VARIABLE(bool, bAimHead, false);
+	C_ADD_VARIABLE(bool, bAimChest, false);
+	C_ADD_VARIABLE(bool, bAimStomach, false);
 	C_ADD_VARIABLE(bool, bAimArms, false);
 	C_ADD_VARIABLE(bool, bAimLegs, false);
+	C_ADD_VARIABLE(bool, bAimAutoShot, false);
+	C_ADD_VARIABLE(bool, bAimAutoWall, false);
+	C_ADD_VARIABLE(int, iAimMinimalDamage, 70);
 
 	// trigger
 	C_ADD_VARIABLE(bool, bTrigger, false);

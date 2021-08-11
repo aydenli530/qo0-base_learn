@@ -36,6 +36,10 @@ void inv_bone_cache(CBaseEntity* player)
 }
 
 void CLagCompensation::on_fsn() { //data replacement can restore the old data which allow us only shoot the old data
+
+	if (!C::Get<bool>(Vars.bMiscBacktrack))
+		return;
+
 	CBaseEntity* player;
 	static CConVar* sv_maxunlag = I::ConVar->FindVar(XorStr("sv_maxunlag")); //Maximum lag compensation in seconds
 	for (int i = 1; i <= I::Globals->nMaxClients; ++i) {
@@ -57,7 +61,7 @@ void CLagCompensation::on_fsn() { //data replacement can restore the old data wh
 
 			if (front.sim_time == player->GetSimulationTime()) //No difference between the record and the player
 				continue;
-			//print_interface(name)
+
 			while (!cur_data.empty()) {
 				auto& back = cur_data.back(); //回傳 vector 最尾元素的值
 				float deltaTime = std::clamp(correct_time, 0.f, sv_maxunlag->GetFloat()) - (I::Globals->flCurrentTime - back.sim_time);
@@ -86,7 +90,7 @@ void CLagCompensation::on_fsn() { //data replacement can restore the old data wh
 		*(int*)((uintptr_t)player + 0xA68) = 0;
 		*(int*)((uintptr_t)player + 0xA30) = 0;
 		inv_bone_cache(player);
-		player->SetupBones(bd.bone_matrix, 256, 0x7FF00, I::Globals->flCurrentTime); //save the bone of the backtrack player
+		player->SetupBones(bd.bone_matrix, 128, 0x7FF00, I::Globals->flCurrentTime); //save the bone of the backtrack player
 		bd.hitbox_pos = M::VectorTransform(hitbox_center, bd.bone_matrix[hitbox_head->iBone]); //output to bd.hitbox_pos
 		data[i].push_front(bd); //insert the old data to the begin 
 
@@ -124,10 +128,18 @@ void CLagCompensation::Run(CUserCmd* pCmd)
 		data.clear();
 		return;
 	}
-	if (!Vars.bMiscBacktrack) {
+	if (!C::Get<bool>(Vars.bMiscBacktrack)) {
 		data.clear();
 		return;
 	}
+
+	if (Get_Best_SimulationTime(pCmd) != -1)
+		pCmd->iTickCount = Get_Best_SimulationTime(pCmd); //doing lag_compensation
+
+}
+
+float CLagCompensation::Get_Best_SimulationTime(CUserCmd* pCmd)
+{
 
 	//cvars
 
@@ -176,10 +188,8 @@ void CLagCompensation::Run(CUserCmd* pCmd)
 
 	Vector local_eye_pos = G::pLocal->GetEyePosition();
 	QAngle angles;
-
 	int tick_count = -1;
 	float best_fov = 255.0f;
-
 	for (auto& node : data) { //the old data
 		auto& cur_data = node.second;
 
@@ -219,10 +229,10 @@ void CLagCompensation::Run(CUserCmd* pCmd)
 			}
 		}
 	}
-	if (tick_count != -1)
-		pCmd->iTickCount = tick_count; //doing lag_compensation
 
+	return tick_count;
 }
+
 
 void CLagCompensation::UpdateIncomingSequences(INetChannel* pNetChannel)
 {

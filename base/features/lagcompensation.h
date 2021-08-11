@@ -49,7 +49,7 @@ struct backtrack_data
 	float               sim_time;
 	mstudiohitboxset_t* hitboxset;
 	Vector              hitbox_pos;
-	matrix3x4_t         bone_matrix[256];//maybe
+	matrix3x4_t         bone_matrix[128];//maybe
 };
 
 // @note: FYI - https://www.unknowncheats.me/forum/counterstrike-global-offensive/280912-road-perfect-aimbot-1-interpolation.html
@@ -60,16 +60,19 @@ public:
 	// Get
 	void Run(CUserCmd* pCmd);
 	void on_fsn();
+	float Get_Best_SimulationTime(CUserCmd* pCmd);
 
 	// Main
 	void UpdateIncomingSequences(INetChannel* pNetChannel);
 	void ClearIncomingSequences();
 	void AddLatencyToNetChannel(INetChannel* pNetChannel, float flLatency);
 
-	
-
-private:
+	//Values
+	float correct_time = 0.0f;
+	float latency = 0.0f;
+	float lerp_time = 0.0f;
 	std::map<int, std::deque<backtrack_data>> data = { };
+private:
 	// Values
 	std::deque<SequenceObject_t> vecSequences = { };
 	/* our real incoming sequences count */
@@ -77,7 +80,5 @@ private:
 	/* count of incoming sequences what we can spike */
 	int nLastIncomingSequence = 0;
 
-	float correct_time = 0.0f;
-	float latency = 0.0f;
-	float lerp_time = 0.0f;
+
 };

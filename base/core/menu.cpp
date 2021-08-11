@@ -251,9 +251,8 @@ void T::LegitBot()
 			if (ImGui::BeginMenuBar())
 			{
 				ImGui::PushStyleVar(ImGuiStyleVar_SelectableTextAlign, ImVec2(0.5f, 0.5f));
-				ImGui::Selectable(XorStr("aimbot##legitbot"), &C::Get<bool>(Vars.bLegit), ImGuiSelectableFlags_None, ImVec2(30, 0));
+				ImGui::Selectable(XorStr("aimbot##legitbot"), &C::Get<bool>(Vars.bLegit), ImGuiSelectableFlags_None, ImVec2(45, 0));
 				ImGui::PopStyleVar();
-				ImGui::SliderInt(XorStr("Fov##legitbot"), &C::Get<int>(Vars.bAimLock), 0, 30, "%dms");
 
 				if (ImGui::BeginMenu(XorStr("Hitbox")))
 				{
@@ -269,7 +268,10 @@ void T::LegitBot()
 			}
 
 			ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(style.FramePadding.x, -1));
-
+			ImGui::SliderInt(XorStr("Fov##legitbot"), &C::Get<int>(Vars.bAimLock), 0, 30, "%dms");
+			ImGui::Checkbox(XorStr("auto shot##legitbot"), &C::Get<bool>(Vars.bAimAutoShot));
+			ImGui::Checkbox(XorStr("auto wall##legitbot"), &C::Get<bool>(Vars.bAimAutoWall));
+			ImGui::SliderInt(XorStr("minimal damage##legitbot"), &C::Get<int>(Vars.iAimMinimalDamage), 1, 100, "%dhp");
 			ImGui::PopStyleVar();
 
 			ImGui::EndChild();

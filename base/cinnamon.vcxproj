@@ -209,14 +209,14 @@
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(SolutionDir)dependencies\freetype\include;$(SolutionDir)dependencies\json;$(DXSDK_DIR)Include;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)dependencies\freetype\win32;$(DXSDK_DIR)Lib\x86;$(LibraryPath)</LibraryPath>
-    <OutDir>..\..\..\CSGO\Googleware project\Googleware\release</OutDir>
+    <OutDir>..\..\..\..\Downloads\CSGO\Googleware project\Googleware\release</OutDir>
     <IntDir>$(SolutionDir)log\$(ProjectName)\$(Configuration)\</IntDir>
     <TargetName>Googleware</TargetName>
     <GenerateManifest>false</GenerateManifest>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>..\..\..\CSGO\Googleware project\Googleware\release</OutDir>
+    <OutDir>..\..\..\..\Downloads\CSGO\Googleware project\Googleware\release</OutDir>
     <IntDir>$(SolutionDir)log\$(ProjectName)\$(Configuration)\</IntDir>
     <TargetName>Googleware</TargetName>
     <IncludePath>$(SolutionDir)dependencies\freetype\include;$(SolutionDir)dependencies\json;$(DXSDK_DIR)Include;$(IncludePath)</IncludePath>
