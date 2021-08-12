@@ -49,7 +49,7 @@ struct backtrack_data
 	float               sim_time;
 	mstudiohitboxset_t* hitboxset;
 	Vector              hitbox_pos;
-	matrix3x4_t         bone_matrix[128];//maybe
+	matrix3x4_t         bone_matrix[MAXSTUDIOBONES];//maybe
 };
 
 // @note: FYI - https://www.unknowncheats.me/forum/counterstrike-global-offensive/280912-road-perfect-aimbot-1-interpolation.html

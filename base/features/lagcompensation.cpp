@@ -90,7 +90,7 @@ void CLagCompensation::on_fsn() { //data replacement can restore the old data wh
 		*(int*)((uintptr_t)player + 0xA68) = 0;
 		*(int*)((uintptr_t)player + 0xA30) = 0;
 		inv_bone_cache(player);
-		player->SetupBones(bd.bone_matrix, 128, 0x7FF00, I::Globals->flCurrentTime); //save the bone of the backtrack player
+		player->SetupBones(bd.bone_matrix, MAXSTUDIOBONES, 0x7FF00, I::Globals->flCurrentTime); //save the bone of the backtrack player
 		bd.hitbox_pos = M::VectorTransform(hitbox_center, bd.bone_matrix[hitbox_head->iBone]); //output to bd.hitbox_pos
 		data[i].push_front(bd); //insert the old data to the begin 
 
@@ -210,7 +210,7 @@ float CLagCompensation::Get_Best_SimulationTime(CUserCmd* pCmd)
 			如果值小於low，則返回low。
 			如果high大於value，則返回high
 			*/
-			if (std::fabsf(deltaTime) > C::Get<int>(Vars.bMiscBacktrackticks)/1000)  // run if less than 200ms
+			if (std::fabsf(deltaTime) > C::Get<float>(Vars.bMiscBacktrackticks)/1000)  // run if less than 200ms
 				continue;
 			//處理float型別的取絕對值(非負值)
 

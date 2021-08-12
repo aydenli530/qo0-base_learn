@@ -15,6 +15,7 @@ public:
 	void Run(CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacket);
 	void Gethitbox();
 	bool ScanDamage(CBaseEntity* pLocal, Vector vecStart, Vector vecEnd);
+	Vector BacktrackPos(CUserCmd* pCmd);
 private:
 	// Main
 	/* aimbot, smooth, etc */

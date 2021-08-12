@@ -45,35 +45,31 @@ void CLegitBot::Run(CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacket)
 		if (pEntity == nullptr || !pEntity->IsPlayer() || pEntity->IsDormant() || !pEntity->IsAlive() || pEntity->HasImmunity()|| !pLocal->IsEnemy(pEntity))
 			continue;
 
-		auto model = pEntity->GetModel();
-		if (!model) continue;
-		auto hdr = I::ModelInfo->GetStudioModel(model);
-		if (!hdr) continue;
-		auto hitbox_set = hdr->GetHitboxSet(pEntity->GetHitboxSet());
-
 		Gethitbox();
 		if (Hithoxs < 0)
 			continue;
 
-		auto hitbox_head = hitbox_set->GetHitbox(Hithoxs);
-		auto hitbox_center = (hitbox_head->vecBBMin + hitbox_head->vecBBMax) * 0.5f;
+		Vector hitbox_pos;
 
-		matrix3x4_t pmatrix[MAXSTUDIOBONES];
 
-		pEntity->SetupBones(pmatrix, MAXSTUDIOBONES, 0x7FF00, I::Globals->flCurrentTime); 
+		if (C::Get<bool>(Vars.bMiscBacktrack))
+			hitbox_pos = BacktrackPos(pCmd);
+		else
+		{
+			if (const auto HitboxPos = pEntity->GetHitboxPosition(Hithoxs); HitboxPos.has_value())
+				hitbox_pos = HitboxPos.value();
+		}
 
-		//if (C::Get<bool>(Vars.bMiscBacktrack))
-		//	pCmd->iTickCount = TIME_TO_TICKS(CLagCompensation::Get().Get_Best_SimulationTime(pCmd)); // that is to go back in time
-		//else
-		//	pCmd->iTickCount = TIME_TO_TICKS(pEntity->GetSimulationTime() + CLagCompensation::Get().lerp_time);
-
-		backtrack_data bd;
-		Vector hitbox_pos = M::VectorTransform(hitbox_center, C::Get<bool>(Vars.bMiscBacktrack)? bd.bone_matrix[hitbox_head->iBone]:pmatrix[hitbox_head->iBone]); //Target hixbox position
 		Vector local_eye_pos = G::pLocal->GetEyePosition();
-		Aim = M::CalcAngle(local_eye_pos,hitbox_pos);  //Calculate the pitch and yaw 
 
-		if (!ScanDamage(pLocal, local_eye_pos, hitbox_pos))
-			continue;
+		if (!pLocal->IsVisible(pEntity, hitbox_pos))
+		{
+			if (!ScanDamage(pLocal, local_eye_pos, hitbox_pos))
+				continue;
+		}
+
+
+		Aim = M::CalcAngle(local_eye_pos, hitbox_pos);  //Calculate the pitch and yaw 
 
 		// get view and add punch
 		QAngle angView = pCmd->angViewPoint;
@@ -106,19 +102,19 @@ void CLegitBot::Gethitbox()
 {
 	// Head
 	if (C::Get<bool>(Vars.bAimHead))
-		Hithoxs = HITGROUP_HEAD;
+		Hithoxs = HITBOX_HEAD;
 	// chest
 	else if (C::Get<bool>(Vars.bAimChest))
-		Hithoxs = HITGROUP_CHEST;
+		Hithoxs = HITBOX_CHEST;
 	// stomach
 	else if (C::Get<bool>(Vars.bAimStomach))
-		Hithoxs = HITGROUP_STOMACH;
+		Hithoxs = HITBOX_STOMACH;
 	// arms
 	else if (C::Get<bool>(Vars.bAimArms))
-		Hithoxs = HITGROUP_RIGHTARM;
+		Hithoxs = HITBOX_RIGHT_FOREARM;
 	// legs
 	else if (C::Get<bool>(Vars.bAimLegs))
-		Hithoxs = HITGROUP_RIGHTLEG;
+		Hithoxs = HITBOX_RIGHT_FOOT;
 	else
 		Hithoxs = -1;
 
@@ -157,4 +153,44 @@ bool CLegitBot::ScanDamage(CBaseEntity* pLocal, Vector vecStart, Vector vecEnd)
 	}
 
 	return true;
+}
+
+Vector CLegitBot::BacktrackPos(CUserCmd* pCmd)
+{
+	static CConVar* sv_maxunlag = I::ConVar->FindVar(XorStr("sv_maxunlag"));
+	QAngle angles;
+	Vector Pos;
+	float best_fov = 255.f;
+	for (auto i = CLagCompensation::Get().data.begin(); i != CLagCompensation::Get().data.end(); i++)
+	{
+		for (int record = 0; record < i->second.size(); record++) {
+
+			
+			Vector local_eye_pos = G::pLocal->GetEyePosition();
+
+			float deltaTime = std::clamp(CLagCompensation::Get().correct_time, 0.f, sv_maxunlag->GetFloat()) - (I::Globals->flCurrentTime - i->second[record].sim_time);
+			/*
+			clamp(value, low, high);
+			如果值小於low，則返回low。
+			如果high大於value，則返回high
+			*/
+			if (std::fabsf(deltaTime) > C::Get<float>(Vars.bMiscBacktrackticks)/1000)  // run if less than 200ms
+				continue;
+			//處理float型別的取絕對值(非負值)
+
+			angles = M::CalcAngle(local_eye_pos, i->second[record].hitbox_pos);
+			//From the differences between the localplayer eye position and the backtrack player hitbox poistion
+			//To calculate the pitch and yaw angles 
+
+			float fov = M::fov_to_player(pCmd->angViewPoint, angles); // radius = distance from view_angles to angles
+			if (best_fov > fov) { //To update the best_fov until the best_fov less than fov
+				best_fov = fov;
+				Pos = i->second[record].hitbox_pos;
+				
+			}
+		}
+
+	}
+	return Pos;
+
 }
