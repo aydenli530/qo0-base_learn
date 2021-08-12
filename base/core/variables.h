@@ -229,6 +229,7 @@ struct Variables_t
 
 	// exploits
 	C_ADD_VARIABLE(bool, bMiscBacktrack, false);
+	C_ADD_VARIABLE(int, bMiscBacktrackticks, false);
 	C_ADD_VARIABLE(bool, bMiscPingSpike, false);
 	C_ADD_VARIABLE(float, flMiscLatencyFactor, 0.4f);
 	C_ADD_VARIABLE(bool, bMiscRevealRanks, false);

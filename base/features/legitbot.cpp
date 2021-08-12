@@ -24,6 +24,11 @@ void CLegitBot::Run(CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacket)
 	if (!pLocal->IsAlive())
 		return;
 
+	static CConVar* weapon_recoil_scale = I::ConVar->FindVar(XorStr("weapon_recoil_scale"));
+
+	if (weapon_recoil_scale == nullptr)
+		return;
+
 	CBaseCombatWeapon* pWeapon = pLocal->GetWeapon();
 
 	if (pWeapon == nullptr)
@@ -57,18 +62,32 @@ void CLegitBot::Run(CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacket)
 
 		pEntity->SetupBones(pmatrix, MAXSTUDIOBONES, 0x7FF00, I::Globals->flCurrentTime); 
 
-		Vector hitbox_pos = M::VectorTransform(hitbox_center, pmatrix[hitbox_head->iBone]); //Target hixbox position
+		//if (C::Get<bool>(Vars.bMiscBacktrack))
+		//	pCmd->iTickCount = TIME_TO_TICKS(CLagCompensation::Get().Get_Best_SimulationTime(pCmd)); // that is to go back in time
+		//else
+		//	pCmd->iTickCount = TIME_TO_TICKS(pEntity->GetSimulationTime() + CLagCompensation::Get().lerp_time);
+
+		backtrack_data bd;
+		Vector hitbox_pos = M::VectorTransform(hitbox_center, C::Get<bool>(Vars.bMiscBacktrack)? bd.bone_matrix[hitbox_head->iBone]:pmatrix[hitbox_head->iBone]); //Target hixbox position
 		Vector local_eye_pos = G::pLocal->GetEyePosition();
 		Aim = M::CalcAngle(local_eye_pos,hitbox_pos);  //Calculate the pitch and yaw 
 
 		if (!ScanDamage(pLocal, local_eye_pos, hitbox_pos))
 			continue;
 
-		float fov = M::fov_to_player(pCmd->angViewPoint, Aim); // radius = distance from view_angles to angles
+		// get view and add punch
+		QAngle angView = pCmd->angViewPoint;
+		angView += pLocal->GetPunch() * weapon_recoil_scale->GetFloat();
+
+		float fov = M::fov_to_player(angView, Aim); // radius = distance from view_angles to angles
 		
 				if (fov < C::Get<int>(Vars.bAimLock)) { // Run if the distance between viewangle and targert is less than aim_lock
+					
 					pCmd->angViewPoint = Aim;
-
+					if (!C::Get<bool>(Vars.bAimSilentShot))
+					{
+						I::Engine->SetViewAngles(Aim);
+					}
 					if (pLocal->CanShoot(static_cast<CWeaponCSBase*>(pWeapon)) && C::Get<bool>(Vars.bAimAutoShot))
 					{
 						pCmd->iButtons |= IN_ATTACK;
@@ -79,10 +98,6 @@ void CLegitBot::Run(CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacket)
 					L::Print(abc);
 					L::PopConsoleColor();
                     #endif
-					//if (C::Get<bool>(Vars.bMiscBacktrack))
-					//	pCmd->iTickCount = TIME_TO_TICKS(CLagCompensation::Get().Get_Best_SimulationTime(pCmd) + CLagCompensation::Get().lerp_time); // that is to go back in time
-					//else
-					//	pCmd->iTickCount = TIME_TO_TICKS(pEntity->GetSimulationTime() + CLagCompensation::Get().lerp_time);
 				}
 	}
 }

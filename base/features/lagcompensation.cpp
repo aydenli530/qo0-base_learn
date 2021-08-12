@@ -210,20 +210,16 @@ float CLagCompensation::Get_Best_SimulationTime(CUserCmd* pCmd)
 			如果值小於low，則返回low。
 			如果high大於value，則返回high
 			*/
-			if (std::fabsf(deltaTime) > 0.2f)  // run if less than 200ms
+			if (std::fabsf(deltaTime) > C::Get<int>(Vars.bMiscBacktrackticks)/1000)  // run if less than 200ms
 				continue;
 			//處理float型別的取絕對值(非負值)
 
 			angles = M::CalcAngle(local_eye_pos, bd.hitbox_pos);
-
-			/*M::VectorAngles(bd.hitbox_pos - local_eye_pos, angles);*/
 			//From the differences between the localplayer eye position and the backtrack player hitbox poistion
 			//To calculate the pitch and yaw angles 
 
-			/*M::FixAngles(&angles);*/
-
 			float fov = M::fov_to_player(pCmd->angViewPoint, angles); // radius = distance from view_angles to angles
-			if (best_fov > fov) { //To update the best_fov until the 
+			if (best_fov > fov) { //To update the best_fov until the best_fov less than fov
 				best_fov = fov;
 				tick_count = TIME_TO_TICKS(bd.sim_time + lerp_time);
 			}

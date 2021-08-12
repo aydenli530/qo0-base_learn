@@ -268,10 +268,11 @@ void T::LegitBot()
 			}
 
 			ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(style.FramePadding.x, -1));
-			ImGui::SliderInt(XorStr("Fov##legitbot"), &C::Get<int>(Vars.bAimLock), 0, 30, "%dms");
-			ImGui::Checkbox(XorStr("auto shot##legitbot"), &C::Get<bool>(Vars.bAimAutoShot));
-			ImGui::Checkbox(XorStr("auto wall##legitbot"), &C::Get<bool>(Vars.bAimAutoWall));
-			ImGui::SliderInt(XorStr("minimal damage##legitbot"), &C::Get<int>(Vars.iAimMinimalDamage), 1, 100, "%dhp");
+			ImGui::SliderInt(XorStr("Fov##legitbot"), &C::Get<int>(Vars.bAimLock), 0, 30, "%d m");
+			ImGui::Checkbox(XorStr("Silent Shot##legitbot"), &C::Get<bool>(Vars.bAimAutoShot));
+			ImGui::Checkbox(XorStr("Auto shot##legitbot"), &C::Get<bool>(Vars.bAimAutoShot));
+			ImGui::Checkbox(XorStr("Auto wall##legitbot"), &C::Get<bool>(Vars.bAimAutoWall));
+			ImGui::SliderInt(XorStr("Minimal damage##legitbot"), &C::Get<int>(Vars.iAimMinimalDamage), 1, 100, "%dhp");
 			ImGui::PopStyleVar();
 
 			ImGui::EndChild();
@@ -547,6 +548,7 @@ void T::Miscellaneous()
 
 			ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(style.FramePadding.x, -1));
 			ImGui::Checkbox(XorStr("Backtrack"), &C::Get<bool>(Vars.bMiscBacktrack));
+			ImGui::SliderInt(XorStr("Backtrack ticks"), &C::Get<int>(Vars.bMiscBacktrackticks), 0, 200, "%d ms%");
 			ImGui::Checkbox(XorStr("ping spike"), &C::Get<bool>(Vars.bMiscPingSpike));
 			ImGui::SliderFloat(XorStr("latency factor"), &C::Get<float>(Vars.flMiscLatencyFactor), 0.1f, 2.0f, "%.1f second");
 			ImGui::Checkbox(XorStr("reveal ranks"), &C::Get<bool>(Vars.bMiscRevealRanks));
