@@ -10,8 +10,13 @@
 #include "../utilities/logging.h"
 // used: cheat variables
 #include "../core/variables.h"
+// USED: Legit hitbox
+#include "legitbot.h"
 #include <string>  
 
+// ==========================Bone Mask=============================
+//cached bone matrix is located at m_nForceBone + 0x1C = Bone Mask 
+//
 bool not_target(CBaseEntity* player) {
 		if (!player || player == G::pLocal)
 			return true;
@@ -45,15 +50,21 @@ void CLagCompensation::on_fsn() { //data replacement can restore the old data wh
 	for (int i = 1; i <= I::Globals->nMaxClients; ++i) {
 		player = I::ClientEntityList->Get<CBaseEntity>(i);
 
-		if (not_target(player)) {
-			if (data.count(i) > 0)
-				data.erase(i); continue; //刪除 vector 中一個或多個元素。
+		//if (not_target(player)) {
+		//	if (data.count(i) > 0)
+		//		data.erase(i); continue; //刪除 vector 中一個或多個元素。
+		//}
+
+		//if (!G::pLocal->IsEnemy(player)) {
+		//	if (data.count(i) > 0)
+		//		data.erase(i); continue; //刪除 vector 中一個或多個元素。
+		//}
+
+		if (player == nullptr || !player->IsPlayer() || player->IsDormant() || !player->IsAlive() || player->HasImmunity() || !G::pLocal->IsEnemy(player)){
+				if (data.count(i) > 0)
+					data.erase(i); continue; //刪除 vector 中一個或多個元素。
 		}
 
-		if (player->GetTeam() == G::pLocal->GetTeam()) {
-			if (data.count(i) > 0)
-				data.erase(i); continue; //刪除 vector 中一個或多個元素。
-		}
 
 		auto& cur_data = data[i]; //& = 會修改到data
 		if (!cur_data.empty()) {
@@ -79,8 +90,8 @@ void CLagCompensation::on_fsn() { //data replacement can restore the old data wh
 		auto hdr = I::ModelInfo->GetStudioModel(model);
 		if (!hdr) continue;
 		auto hitbox_set = hdr->GetHitboxSet(player->GetHitboxSet());
-		auto hitbox_head = hitbox_set->GetHitbox(HITBOX_HEAD);
-		auto hitbox_center = (hitbox_head->vecBBMin + hitbox_head->vecBBMax) * 0.5f;
+		auto hitbox_pos = hitbox_set->GetHitbox(CLegitBot::Get().Hithoxs);
+		auto hitbox_center = (hitbox_pos->vecBBMin + hitbox_pos->vecBBMax) * 0.5f;
 
 
 		backtrack_data bd;
@@ -90,8 +101,8 @@ void CLagCompensation::on_fsn() { //data replacement can restore the old data wh
 		*(int*)((uintptr_t)player + 0xA68) = 0;
 		*(int*)((uintptr_t)player + 0xA30) = 0;
 		inv_bone_cache(player);
-		player->SetupBones(bd.bone_matrix, MAXSTUDIOBONES, 0x7FF00, I::Globals->flCurrentTime); //save the bone of the backtrack player
-		bd.hitbox_pos = M::VectorTransform(hitbox_center, bd.bone_matrix[hitbox_head->iBone]); //output to bd.hitbox_pos
+		player->SetupBones(bd.bone_matrix, MAXSTUDIOBONES, BONE_USED_BY_ANYTHING, I::Globals->flCurrentTime); //save the bone of the backtrack player
+		bd.hitbox_pos = M::VectorTransform(hitbox_center, bd.bone_matrix[hitbox_pos->iBone]); //output to bd.hitbox_pos
 		data[i].push_front(bd); //insert the old data to the begin 
 
 		//將元素從前面推入列表。在當前第一個元素和容器大小增加1之前，將新值插入到列表的開頭。
@@ -138,7 +149,7 @@ void CLagCompensation::Run(CUserCmd* pCmd)
 
 }
 
-float CLagCompensation::Get_Best_SimulationTime(CUserCmd* pCmd)
+int CLagCompensation::Get_Best_SimulationTime(CUserCmd* pCmd)
 {
 
 	//cvars
@@ -222,7 +233,10 @@ float CLagCompensation::Get_Best_SimulationTime(CUserCmd* pCmd)
 			if (best_fov > fov) { //To update the best_fov until the best_fov less than fov
 				best_fov = fov;
 				tick_count = TIME_TO_TICKS(bd.sim_time + lerp_time);
+				RecordTarget = bd.hitbox_pos;
 			}
+			LastTarget = bd.hitbox_pos;
+			LastTick = bd.bone_matrix;
 		}
 	}
 

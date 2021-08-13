@@ -271,6 +271,9 @@ void T::LegitBot()
 			ImGui::SliderInt(XorStr("Fov##legitbot"), &C::Get<int>(Vars.bAimLock), 0, 30, "%d m");
 			ImGui::Checkbox(XorStr("Silent Shot##legitbot"), &C::Get<bool>(Vars.bAimSilentShot));
 			ImGui::Checkbox(XorStr("Auto shot##legitbot"), &C::Get<bool>(Vars.bAimAutoShot));
+			ImGui::Checkbox(XorStr("Aim record##legitbot"), &C::Get<bool>(Vars.bAimRecord));
+			if (C::Get<bool>(Vars.bAimRecord))
+				ImGui::Checkbox(XorStr("LastTick##legitbot"), &C::Get<bool>(Vars.bAimLastTick));
 			ImGui::Checkbox(XorStr("Auto wall##legitbot"), &C::Get<bool>(Vars.bAimAutoWall));
 			ImGui::SliderInt(XorStr("Minimal damage##legitbot"), &C::Get<int>(Vars.iAimMinimalDamage), 1, 100, "%dhp");
 			ImGui::PopStyleVar();

@@ -13,6 +13,8 @@
 #include "../sdk/entity.h"
 // used: bone masks, studio classes
 #include "../sdk/studio.h"
+// used: cheat variables
+#include "../core/variables.h"
 
 #pragma region lagcompensation_definitions
 #define LAG_COMPENSATION_TELEPORTED_DISTANCE_SQR ( 64.0f * 64.0f )
@@ -60,7 +62,7 @@ public:
 	// Get
 	void Run(CUserCmd* pCmd);
 	void on_fsn();
-	float Get_Best_SimulationTime(CUserCmd* pCmd);
+	int Get_Best_SimulationTime(CUserCmd* pCmd);
 
 	// Main
 	void UpdateIncomingSequences(INetChannel* pNetChannel);
@@ -71,6 +73,12 @@ public:
 	float correct_time = 0.0f;
 	float latency = 0.0f;
 	float lerp_time = 0.0f;
+	
+	//Backtrack
+	Vector RecordTarget;
+	Vector LastTarget;
+	Vector BestTarget = C::Get<bool>(Vars.bAimLastTick) ? LastTarget : RecordTarget;
+	matrix3x4_t* LastTick; 
 	std::map<int, std::deque<backtrack_data>> data = { };
 private:
 	// Values

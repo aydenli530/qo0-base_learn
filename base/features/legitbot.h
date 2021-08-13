@@ -15,12 +15,14 @@ public:
 	void Run(CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacket);
 	void Gethitbox();
 	bool ScanDamage(CBaseEntity* pLocal, Vector vecStart, Vector vecEnd);
-	Vector BacktrackPos(CUserCmd* pCmd);
+
+	//Values
+	int Hithoxs;
 private:
 	// Main
 	/* aimbot, smooth, etc */
 	QAngle Aim;
-	int Hithoxs;
+	
 	// Check
 	/* is entity valid */
 };

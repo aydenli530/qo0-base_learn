@@ -95,6 +95,8 @@ struct Variables_t
 	C_ADD_VARIABLE(bool, bAimLegs, false);
 	C_ADD_VARIABLE(bool, bAimSilentShot, false);
 	C_ADD_VARIABLE(bool, bAimAutoShot, false);
+	C_ADD_VARIABLE(bool, bAimRecord, false);
+	C_ADD_VARIABLE(bool, bAimLastTick, false);
 	C_ADD_VARIABLE(bool, bAimAutoWall, false);
 	C_ADD_VARIABLE(int, iAimMinimalDamage, 70);
 

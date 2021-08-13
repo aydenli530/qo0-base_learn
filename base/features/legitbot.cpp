@@ -38,6 +38,10 @@ void CLegitBot::Run(CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacket)
 	if (W::bMainOpened)
 		return;
 	
+	Gethitbox();
+	if (Hithoxs < 0)
+		return;
+
 	for (int i = 1; i <= I::Globals->nMaxClients; i++)
 	{
 		CBaseEntity* pEntity = I::ClientEntityList->Get<CBaseEntity>(i);
@@ -45,20 +49,7 @@ void CLegitBot::Run(CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacket)
 		if (pEntity == nullptr || !pEntity->IsPlayer() || pEntity->IsDormant() || !pEntity->IsAlive() || pEntity->HasImmunity()|| !pLocal->IsEnemy(pEntity))
 			continue;
 
-		Gethitbox();
-		if (Hithoxs < 0)
-			continue;
-
-		Vector hitbox_pos;
-
-
-		if (C::Get<bool>(Vars.bMiscBacktrack))
-			hitbox_pos = BacktrackPos(pCmd);
-		else
-		{
-			if (const auto HitboxPos = pEntity->GetHitboxPosition(Hithoxs); HitboxPos.has_value())
-				hitbox_pos = HitboxPos.value();
-		}
+		Vector hitbox_pos = C::Get<bool>(Vars.bAimRecord) ? CLagCompensation::Get().RecordTarget : pEntity->GetHitboxPosition(Hithoxs).value();
 
 		Vector local_eye_pos = G::pLocal->GetEyePosition();
 
@@ -68,7 +59,6 @@ void CLegitBot::Run(CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacket)
 				continue;
 		}
 
-
 		Aim = M::CalcAngle(local_eye_pos, hitbox_pos);  //Calculate the pitch and yaw 
 
 		// get view and add punch
@@ -77,24 +67,24 @@ void CLegitBot::Run(CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacket)
 
 		float fov = M::fov_to_player(angView, Aim); // radius = distance from view_angles to angles
 		
-				if (fov < C::Get<int>(Vars.bAimLock)) { // Run if the distance between viewangle and targert is less than aim_lock
+		if (fov < C::Get<int>(Vars.bAimLock)) { // Run if the distance between viewangle and targert is less than aim_lock
 					
-					pCmd->angViewPoint = Aim;
-					if (!C::Get<bool>(Vars.bAimSilentShot))
-					{
-						I::Engine->SetViewAngles(Aim);
-					}
-					if (pLocal->CanShoot(static_cast<CWeaponCSBase*>(pWeapon)) && C::Get<bool>(Vars.bAimAutoShot))
-					{
-						pCmd->iButtons |= IN_ATTACK;
-					}
-                    #ifdef DEBUG_CONSOLE
-					L::PushConsoleColor(FOREGROUND_YELLOW);
-					std::string abc = "X " + std::to_string(Aim.x) + "Y " + std::to_string(Aim.y);
-					L::Print(abc);
-					L::PopConsoleColor();
-                    #endif
-				}
+			pCmd->angViewPoint = Aim;
+			if (!C::Get<bool>(Vars.bAimSilentShot))
+			{
+				I::Engine->SetViewAngles(Aim);
+			}
+			if (pLocal->CanShoot(static_cast<CWeaponCSBase*>(pWeapon)) && C::Get<bool>(Vars.bAimAutoShot))
+			{
+				pCmd->iButtons |= IN_ATTACK;
+			}
+            #ifdef DEBUG_CONSOLE
+			L::PushConsoleColor(FOREGROUND_YELLOW);
+			std::string abc = "X " + std::to_string(Aim.x) + "Y " + std::to_string(Aim.y);
+			L::Print(abc);
+			L::PopConsoleColor();
+            #endif
+		}
 	}
 }
 
@@ -137,13 +127,6 @@ bool CLegitBot::ScanDamage(CBaseEntity* pLocal, Vector vecStart, Vector vecEnd)
 		// copy trace from autowall
 		trace = data.enterTrace;
 	}
-	else
-	{
-		// otherwise ray new trace
-		Ray_t ray(vecStart, vecEnd);
-		CTraceFilter filter(pLocal);
-		I::EngineTrace->TraceRay(ray, MASK_SHOT, &filter, &trace);
-	}
 
 	CBaseEntity* pEntity = trace.pHitEntity;
 
@@ -155,42 +138,3 @@ bool CLegitBot::ScanDamage(CBaseEntity* pLocal, Vector vecStart, Vector vecEnd)
 	return true;
 }
 
-Vector CLegitBot::BacktrackPos(CUserCmd* pCmd)
-{
-	static CConVar* sv_maxunlag = I::ConVar->FindVar(XorStr("sv_maxunlag"));
-	QAngle angles;
-	Vector Pos;
-	float best_fov = 255.f;
-	for (auto i = CLagCompensation::Get().data.begin(); i != CLagCompensation::Get().data.end(); i++)
-	{
-		for (int record = 0; record < i->second.size(); record++) {
-
-			
-			Vector local_eye_pos = G::pLocal->GetEyePosition();
-
-			float deltaTime = std::clamp(CLagCompensation::Get().correct_time, 0.f, sv_maxunlag->GetFloat()) - (I::Globals->flCurrentTime - i->second[record].sim_time);
-			/*
-			clamp(value, low, high);
-			如果值小於low，則返回low。
-			如果high大於value，則返回high
-			*/
-			if (std::fabsf(deltaTime) > C::Get<float>(Vars.bMiscBacktrackticks)/1000)  // run if less than 200ms
-				continue;
-			//處理float型別的取絕對值(非負值)
-
-			angles = M::CalcAngle(local_eye_pos, i->second[record].hitbox_pos);
-			//From the differences between the localplayer eye position and the backtrack player hitbox poistion
-			//To calculate the pitch and yaw angles 
-
-			float fov = M::fov_to_player(pCmd->angViewPoint, angles); // radius = distance from view_angles to angles
-			if (best_fov > fov) { //To update the best_fov until the best_fov less than fov
-				best_fov = fov;
-				Pos = i->second[record].hitbox_pos;
-				
-			}
-		}
-
-	}
-	return Pos;
-
-}
