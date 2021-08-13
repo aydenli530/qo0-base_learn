@@ -230,13 +230,13 @@ int CLagCompensation::Get_Best_SimulationTime(CUserCmd* pCmd)
 			//To calculate the pitch and yaw angles 
 
 			float fov = M::fov_to_player(pCmd->angViewPoint, angles); // radius = distance from view_angles to angles
-			if (best_fov > fov) { //To update the best_fov until the best_fov less than fov
+			if (best_fov > fov && (bd.sim_time > G::pLocal->GetSimulationTime() - 1)) { //To update the best_fov until the best_fov less than fov
 				best_fov = fov;
 				tick_count = TIME_TO_TICKS(bd.sim_time + lerp_time);
-				RecordTarget = bd.hitbox_pos;
+				LastTarget = bd.hitbox_pos;
+				LastTick = bd.bone_matrix;
 			}
-			LastTarget = bd.hitbox_pos;
-			LastTick = bd.bone_matrix;
+			
 		}
 	}
 

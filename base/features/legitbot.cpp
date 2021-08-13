@@ -49,7 +49,7 @@ void CLegitBot::Run(CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacket)
 		if (pEntity == nullptr || !pEntity->IsPlayer() || pEntity->IsDormant() || !pEntity->IsAlive() || pEntity->HasImmunity()|| !pLocal->IsEnemy(pEntity))
 			continue;
 
-		Vector hitbox_pos = C::Get<bool>(Vars.bAimRecord) ? CLagCompensation::Get().RecordTarget : pEntity->GetHitboxPosition(Hithoxs).value();
+		Vector hitbox_pos = C::Get<bool>(Vars.bAimRecord) ? CLagCompensation::Get().LastTarget : pEntity->GetHitboxPosition(Hithoxs).value();
 
 		Vector local_eye_pos = G::pLocal->GetEyePosition();
 
@@ -63,7 +63,7 @@ void CLegitBot::Run(CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacket)
 
 		// get view and add punch
 		QAngle angView = pCmd->angViewPoint;
-		angView += pLocal->GetPunch() * weapon_recoil_scale->GetFloat();
+		//angView += pLocal->GetPunch() * weapon_recoil_scale->GetFloat();
 
 		float fov = M::fov_to_player(angView, Aim); // radius = distance from view_angles to angles
 		
@@ -78,12 +78,12 @@ void CLegitBot::Run(CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacket)
 			{
 				pCmd->iButtons |= IN_ATTACK;
 			}
-            #ifdef DEBUG_CONSOLE
-			L::PushConsoleColor(FOREGROUND_YELLOW);
-			std::string abc = "X " + std::to_string(Aim.x) + "Y " + std::to_string(Aim.y);
-			L::Print(abc);
-			L::PopConsoleColor();
-            #endif
+   //         #ifdef DEBUG_CONSOLE
+			//L::PushConsoleColor(FOREGROUND_YELLOW);
+			//std::string abc = "X " + std::to_string(Aim.x) + "Y " + std::to_string(Aim.y);
+			//L::Print(abc);
+			//L::PopConsoleColor();
+   //         #endif
 		}
 	}
 }

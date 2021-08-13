@@ -187,6 +187,7 @@ struct Variables_t
 	C_ADD_VARIABLE(bool, bEspChamsViewModel, false);
 
 	C_ADD_VARIABLE(bool, bEspChamsXQZ, false);
+	C_ADD_VARIABLE(bool, bEspChamsRecord, false);
 	C_ADD_VARIABLE(bool, bEspChamsDisableOcclusion, false);
 	C_ADD_VARIABLE(int, iEspChamsPlayer, static_cast<int>(EVisualsPlayersChams::COVERED));
 	C_ADD_VARIABLE(int, iEspChamsViewModel, static_cast<int>(EVisualsViewModelChams::WIREFRAME));

@@ -75,9 +75,7 @@ public:
 	float lerp_time = 0.0f;
 	
 	//Backtrack
-	Vector RecordTarget;
 	Vector LastTarget;
-	Vector BestTarget = C::Get<bool>(Vars.bAimLastTick) ? LastTarget : RecordTarget;
 	matrix3x4_t* LastTick; 
 	std::map<int, std::deque<backtrack_data>> data = { };
 private:

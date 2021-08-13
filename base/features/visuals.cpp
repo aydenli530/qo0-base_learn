@@ -16,6 +16,8 @@
 #include "../utilities/math.h"
 // used: get weapon icon
 #include "../utilities.h"
+// used: Render backrack
+#include "lagcompensation.h"
 
 // @note: avoid store imcolor, store either u32 of imvec4
 void CVisuals::Store()
@@ -393,6 +395,27 @@ bool CVisuals::Chams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const Dr
 
 				// draw model with xqz material
 				oDrawModel(I::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+			}
+			else if (C::Get<bool>(Vars.bEspChamsRecord))
+			{
+				// set xqz color
+				I::StudioRender->SetColorModulation(colHidden.Base().data());
+
+				// set xqz alpha
+				I::StudioRender->SetAlphaModulation(colHidden.Base<COLOR_A>());
+
+				// enable "$ignorez" flag and it enables ignore the z axis
+				pMaterial->SetMaterialVarFlag(MATERIAL_VAR_IGNOREZ, true);
+
+				// set xqz wireframe
+				pMaterial->SetMaterialVarFlag(MATERIAL_VAR_WIREFRAME, C::Get<int>(Vars.iEspChamsPlayer) == (int)EVisualsPlayersChams::WIREFRAME ? true : false);
+
+				// override ignorez material
+				I::StudioRender->ForcedMaterialOverride(pMaterial);
+
+				// draw model with xqz material
+				oDrawModel(I::StudioRender, 0, pResults, info, CLagCompensation::Get().LastTick, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+
 			}
 
 			// do visible chams
