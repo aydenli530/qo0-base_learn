@@ -396,26 +396,26 @@ bool CVisuals::Chams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const Dr
 				// draw model with xqz material
 				oDrawModel(I::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 			}
-			else if (C::Get<bool>(Vars.bEspChamsRecord))
+			else if (C::Get<bool>(Vars.bEspChamsRecord) && pEntity->IsMoving())
 			{
+
 				// set xqz color
 				I::StudioRender->SetColorModulation(colHidden.Base().data());
 
-				// set xqz alpha
-				I::StudioRender->SetAlphaModulation(colHidden.Base<COLOR_A>());
+				// enable "$ignorez" flag
+				pMaterial->SetMaterialVarFlag(MATERIAL_VAR_IGNOREZ, false);
 
-				// enable "$ignorez" flag and it enables ignore the z axis
-				pMaterial->SetMaterialVarFlag(MATERIAL_VAR_IGNOREZ, true);
-
-				// set xqz wireframe
+				// set wireframe
 				pMaterial->SetMaterialVarFlag(MATERIAL_VAR_WIREFRAME, C::Get<int>(Vars.iEspChamsPlayer) == (int)EVisualsPlayersChams::WIREFRAME ? true : false);
 
 				// override ignorez material
 				I::StudioRender->ForcedMaterialOverride(pMaterial);
 
 				// draw model with xqz material
-				oDrawModel(I::StudioRender, 0, pResults, info, CLagCompensation::Get().LastTick, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 
+				oDrawModel(I::StudioRender, 0, pResults, info, CLagCompensation::Get().LastTick, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+	
+				
 			}
 
 			// do visible chams

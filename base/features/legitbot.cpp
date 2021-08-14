@@ -63,7 +63,7 @@ void CLegitBot::Run(CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacket)
 
 		// get view and add punch
 		QAngle angView = pCmd->angViewPoint;
-		//angView += pLocal->GetPunch() * weapon_recoil_scale->GetFloat();
+		angView += pLocal->GetPunch() * weapon_recoil_scale->GetFloat();
 
 		float fov = M::fov_to_player(angView, Aim); // radius = distance from view_angles to angles
 		

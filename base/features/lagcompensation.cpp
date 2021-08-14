@@ -50,21 +50,11 @@ void CLagCompensation::on_fsn() { //data replacement can restore the old data wh
 	for (int i = 1; i <= I::Globals->nMaxClients; ++i) {
 		player = I::ClientEntityList->Get<CBaseEntity>(i);
 
-		//if (not_target(player)) {
-		//	if (data.count(i) > 0)
-		//		data.erase(i); continue; //刪除 vector 中一個或多個元素。
-		//}
-
-		//if (!G::pLocal->IsEnemy(player)) {
-		//	if (data.count(i) > 0)
-		//		data.erase(i); continue; //刪除 vector 中一個或多個元素。
-		//}
 
 		if (player == nullptr || !player->IsPlayer() || player->IsDormant() || !player->IsAlive() || player->HasImmunity() || !G::pLocal->IsEnemy(player)){
-				if (data.count(i) > 0)
-					data.erase(i); continue; //刪除 vector 中一個或多個元素。
+			if (data.count(i) > 0)
+				data.erase(i); continue; //刪除 vector 中一個或多個元素。		
 		}
-
 
 		auto& cur_data = data[i]; //& = 會修改到data
 		if (!cur_data.empty()) {
@@ -97,9 +87,10 @@ void CLagCompensation::on_fsn() { //data replacement can restore the old data wh
 		backtrack_data bd;
 		bd.hitboxset = hitbox_set;
 		bd.sim_time = player->GetSimulationTime();
+
 		*(Vector*)((uintptr_t)player + 0xA0) = player->GetOrigin();
-		*(int*)((uintptr_t)player + 0xA68) = 0;
-		*(int*)((uintptr_t)player + 0xA30) = 0;
+		*(int*)((uintptr_t)player + 0xA68) = 0; //backup_shit 
+		*(int*)((uintptr_t)player + 0xA30) = 0;  
 		inv_bone_cache(player);
 		player->SetupBones(bd.bone_matrix, MAXSTUDIOBONES, BONE_USED_BY_ANYTHING, I::Globals->flCurrentTime); //save the bone of the backtrack player
 		bd.hitbox_pos = M::VectorTransform(hitbox_center, bd.bone_matrix[hitbox_pos->iBone]); //output to bd.hitbox_pos
@@ -135,10 +126,12 @@ void CLagCompensation::Run(CUserCmd* pCmd)
 	short nDefinitionIndex = pWeapon->GetItemDefinitionIndex();
 	CCSWeaponData* pWeaponData = I::WeaponSystem->GetWeaponData(nDefinitionIndex);
 
-	if (!pWeaponData || !pWeaponData->IsGun()) {
-		data.clear();
-		return;
-	}
+	//if (!pWeaponData || !pWeaponData->IsGun()) {
+	//	LastTarget = 0;
+	//	data.clear();
+	//	return;
+	//}
+
 	if (!C::Get<bool>(Vars.bMiscBacktrack)) {
 		data.clear();
 		return;
@@ -214,23 +207,19 @@ int CLagCompensation::Get_Best_SimulationTime(CUserCmd* pCmd)
 		if (cur_data.empty())
 			continue;
 
-		for (auto& bd : cur_data) { //the data is vaild
-			float deltaTime = std::clamp(correct_time, 0.f, sv_maxunlag->GetFloat()) - (I::Globals->flCurrentTime - bd.sim_time);
-			/*
-			clamp(value, low, high);
-			如果值小於low，則返回low。
-			如果high大於value，則返回high
-			*/
+		for (auto& bd : cur_data) { //Loop the vaild data of each player
+			float deltaTime = std::clamp(correct_time, 0.f, sv_maxunlag->GetFloat()) - (I::Globals->flCurrentTime - bd.sim_time); //deltaTime = clamp(value, low, high);
+
 			if (std::fabsf(deltaTime) > C::Get<float>(Vars.bMiscBacktrackticks)/1000)  // run if less than 200ms
 				continue;
 			//處理float型別的取絕對值(非負值)
-
+			
 			angles = M::CalcAngle(local_eye_pos, bd.hitbox_pos);
 			//From the differences between the localplayer eye position and the backtrack player hitbox poistion
 			//To calculate the pitch and yaw angles 
-
+			
 			float fov = M::fov_to_player(pCmd->angViewPoint, angles); // radius = distance from view_angles to angles
-			if (best_fov > fov && (bd.sim_time > G::pLocal->GetSimulationTime() - 1)) { //To update the best_fov until the best_fov less than fov
+			if (best_fov > fov /*&& (bd.sim_time > G::pLocal->GetSimulationTime() - 1)*/) { //To update the best_fov until the best_fov less than fov
 				best_fov = fov;
 				tick_count = TIME_TO_TICKS(bd.sim_time + lerp_time);
 				LastTarget = bd.hitbox_pos;

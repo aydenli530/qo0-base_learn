@@ -25,6 +25,25 @@ int CBaseEntity::GetSequenceActivity(int iSequence)
 	return oGetSequenceActivity(this, pStudioHdr, iSequence);
 }
 
+bool CBaseEntity::HaveWeapon() {
+
+	CBaseCombatWeapon* pWeapon = this->GetWeapon();
+
+	if (pWeapon == nullptr)
+		return false;
+
+	short nDefinitionIndex = pWeapon->GetItemDefinitionIndex();
+	CCSWeaponData* pWeaponData = I::WeaponSystem->GetWeaponData(nDefinitionIndex);
+
+	if (!pWeaponData || !pWeaponData->IsGun()) {
+
+		return false;
+	}
+
+	return true;
+}
+
+
 CBaseCombatWeapon* CBaseEntity::GetWeapon()
 {
 	return I::ClientEntityList->Get<CBaseCombatWeapon>(this->GetActiveWeaponHandle());
@@ -220,6 +239,17 @@ bool CBaseEntity::IsEnemy(CBaseEntity* pEntity)
 
 	return false;
 }
+
+bool CBaseEntity::IsMoving()
+{
+
+	if (this->GetVelocity().x != 0.f || this->GetVelocity().y != 0.f || this->GetVelocity().z != 0.f)
+		return true;
+
+	return false;
+}
+
+
 
 bool CBaseEntity::IsTargetingLocal(CBaseEntity* pLocal)
 {

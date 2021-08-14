@@ -655,6 +655,8 @@ public:
 	bool					IsEnemy(CBaseEntity* pEntity);
 	bool					IsTargetingLocal(CBaseEntity* pLocal);
 	bool					CanShoot(CWeaponCSBase* pBaseWeapon);
+	bool                    IsMoving();
+	bool                    HaveWeapon();
 	bool					IsVisible(CBaseEntity* pEntity, const Vector& vecSpot, bool bSmokeCheck = false);
 };
 
