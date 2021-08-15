@@ -53,6 +53,7 @@ struct DrawModelInfo_t
 	ColorMeshInfo_t*		pColorMeshes;
 	bool					bStaticLighting;
 	MaterialLightingState_t	lightingState;
+	int                     entity_index;
 };
 
 class IStudioRender

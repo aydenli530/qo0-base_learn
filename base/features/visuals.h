@@ -81,6 +81,7 @@ public:
 	void Event(IGameEvent* pEvent, const FNV1A_t uNameHash);
 	// Other
 	/* color player models, returns true when need clear overrides */
+	bool BacktrackChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const DrawModelInfo_t& info, matrix3x4_t* pBoneToWorld, float* flFlexWeights, float* flFlexDelayedWeights, const Vector& vecModelOrigin, int nFlags);
 	bool Chams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const DrawModelInfo_t& info, matrix3x4_t* pBoneToWorld, float* flFlexWeights, float* flFlexDelayedWeights, const Vector& vecModelOrigin, int nFlags);
 	/* glow effect on entities like while spectating */
 	void Glow(CBaseEntity* pLocal);

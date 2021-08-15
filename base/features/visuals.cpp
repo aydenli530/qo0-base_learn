@@ -18,6 +18,8 @@
 #include "../utilities.h"
 // used: Render backrack
 #include "lagcompensation.h"
+// used: result logging
+#include "../utilities/logging.h"
 
 // @note: avoid store imcolor, store either u32 of imvec4
 void CVisuals::Store()
@@ -396,27 +398,6 @@ bool CVisuals::Chams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const Dr
 				// draw model with xqz material
 				oDrawModel(I::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 			}
-			else if (C::Get<bool>(Vars.bEspChamsRecord) && pEntity->IsMoving())
-			{
-
-				// set xqz color
-				I::StudioRender->SetColorModulation(colHidden.Base().data());
-
-				// enable "$ignorez" flag
-				pMaterial->SetMaterialVarFlag(MATERIAL_VAR_IGNOREZ, false);
-
-				// set wireframe
-				pMaterial->SetMaterialVarFlag(MATERIAL_VAR_WIREFRAME, C::Get<int>(Vars.iEspChamsPlayer) == (int)EVisualsPlayersChams::WIREFRAME ? true : false);
-
-				// override ignorez material
-				I::StudioRender->ForcedMaterialOverride(pMaterial);
-
-				// draw model with xqz material
-
-				oDrawModel(I::StudioRender, 0, pResults, info, CLagCompensation::Get().LastTick, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
-	
-				
-			}
 
 			// do visible chams
 			// set color
@@ -574,6 +555,122 @@ bool CVisuals::Chams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const Dr
 
 	return false;
 }
+
+
+bool CVisuals::BacktrackChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const DrawModelInfo_t& info, matrix3x4_t* pBoneToWorld, float* flFlexWeights, float* flFlexDelayedWeights, const Vector& vecModelOrigin, int nFlags)
+{
+	static CConVar* sv_maxunlag = I::ConVar->FindVar(XorStr("sv_maxunlag"));
+	static auto oDrawModel = DTR::DrawModel.GetOriginal<decltype(&H::hkDrawModel)>();
+	IClientRenderable* pRenderable = info.pClientEntity;
+
+	if (pRenderable == nullptr)
+		return false;
+
+	// get entity from renderable
+	CBaseEntity* pEntity = pRenderable->GetIClientUnknown()->GetBaseEntity();
+
+	if (pEntity == nullptr)
+		return false;
+
+	const std::string_view szModelName = info.pStudioHdr->szName;
+
+	// check for players
+	if (pEntity->IsPlayer() && pEntity->IsAlive() && (C::Get<bool>(Vars.bEspChamsEnemies) || C::Get<bool>(Vars.bEspChamsAllies)))
+	{
+		// skip glow models
+		if (nFlags & (STUDIO_RENDER | STUDIO_SKIP_FLEXES | STUDIO_DONOTMODIFYSTENCILSTATE | STUDIO_NOLIGHTING_OR_CUBEMAP | STUDIO_SKIP_DECALS))
+			return false;
+
+		// team filters check
+			// enemies
+		if ((pLocal->IsEnemy(pEntity) && C::Get<bool>(Vars.bEspChamsEnemies)) ||
+			// teammates & local
+			(((pEntity == pLocal && I::Input->bCameraInThirdPerson) || !pLocal->IsEnemy(pEntity)) && C::Get<bool>(Vars.bEspChamsAllies)))
+		{
+
+			if (CLagCompensation::Get().data.empty())
+				return false;
+
+			if (CLagCompensation::Get().data.count(pEntity->GetIndex()) > 0)
+			{
+				auto& bt_data = CLagCompensation::Get().data.at(pEntity->GetIndex());
+
+				if (bt_data.empty())
+					return false;
+
+
+				static IMaterial* pMaterial = nullptr;
+
+				// set players material
+				switch (static_cast<EVisualsPlayersChams>(C::Get<int>(Vars.iEspChamsPlayer)))
+				{
+				case EVisualsPlayersChams::FLAT:
+					pMaterial = arrMaterials.at(0).second;
+					break;
+				case EVisualsPlayersChams::REFLECTIVE:
+					pMaterial = arrMaterials.at(2).first;
+					break;
+				default:
+					pMaterial = arrMaterials.at(0).first;
+					break;
+				}
+
+				// check is valid material
+				if (pMaterial == nullptr || pMaterial->IsErrorMaterial())
+					return false;
+
+				// get colors
+				const Color colHidden = pLocal->IsEnemy(pEntity) ? C::Get<Color>(Vars.colEspChamsEnemiesWall) : C::Get<Color>(Vars.colEspChamsAlliesWall);
+
+				for (int i = 1; i < bt_data.size(); i++)
+				{
+//#ifdef DEBUG_CONSOLE
+//					L::PushConsoleColor(FOREGROUND_YELLOW);
+//					std::string abc = "tick: " + std::to_string(i);
+//					L::Print(abc);
+//					L::PopConsoleColor();
+//#endif
+					if (i == 24) {
+					if (pEntity->IsMoving())
+					{
+					
+
+					float deltaTime = std::clamp(CLagCompensation::Get().correct_time, 0.f, sv_maxunlag->GetFloat()) - (I::Globals->flCurrentTime - bt_data.at(i).sim_time); //deltaTime = clamp(value, low, high);
+
+					if (std::fabsf(deltaTime) > C::Get<float>(Vars.bMiscBacktrackticks) / 1000)  // run if less than 200ms
+						continue;
+
+					// set xqz color
+					I::StudioRender->SetColorModulation(colHidden.Base().data());
+
+					// enable "$ignorez" flag
+					pMaterial->SetMaterialVarFlag(MATERIAL_VAR_IGNOREZ, false);
+
+					// set wireframe
+					pMaterial->SetMaterialVarFlag(MATERIAL_VAR_WIREFRAME, C::Get<int>(Vars.iEspChamsPlayer) == (int)EVisualsPlayersChams::WIREFRAME ? true : false);
+
+					// override ignorez material
+					I::StudioRender->ForcedMaterialOverride(pMaterial);
+
+					// draw model with xqz material
+
+					oDrawModel(I::StudioRender, 0, pResults, info, bt_data.at(i).bone_matrix, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+					}
+					}
+
+				}
+
+				// we need to clear override
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
+
+
 
 void CVisuals::Glow(CBaseEntity* pLocal)
 {
