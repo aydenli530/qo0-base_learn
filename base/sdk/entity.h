@@ -379,7 +379,7 @@ class IClientEntity : public IClientUnknown, public IClientRenderable, public IC
 {
 public:
 	virtual const Vector&			GetAbsOrigin() const = 0;
-	virtual const QAngle&			GetAbsAngles() const = 0;
+	virtual const QAngle&			GetAbsAngles() const = 0; //abs angle controls the direction that your feet / body is pointing  = m_flGoalFeetYaw 
 	virtual void*					GetMouth() = 0;
 	virtual bool					GetSoundSpatialization(struct SpatializationInfo_t& info) = 0;
 	virtual bool					IsBlurred() = 0;
@@ -460,7 +460,7 @@ public:
 	#pragma endregion
 
 	#pragma region DT_CSPlayer
-	N_ADD_VARIABLE(int, GetShotsFired, "CCSPlayer->m_iShotsFired");
+	N_ADD_VARIABLE(int, GetShotsFired, "CCSPlayer->m_iShotsFired");  //If we have fired
 	N_ADD_VARIABLE(int, GetMoney, "CCSPlayer->m_iAccount");
 	N_ADD_VARIABLE(int, GetTotalHits, "CCSPlayer->m_totalHitsOnServer");
 	N_ADD_VARIABLE(int, GetArmor, "CCSPlayer->m_ArmorValue");

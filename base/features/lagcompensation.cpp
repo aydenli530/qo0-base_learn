@@ -40,7 +40,7 @@ void inv_bone_cache(CBaseEntity* player)
 	*(unsigned int*)((DWORD)player + 0x2690) = (model_bone_counter - 1); // m_iMostRecentModelBoneCounter = g_iModelBoneCounter - 1;
 }
 
-void CLagCompensation::on_fsn() { //data replacement can restore the old data which allow us only shoot the old data
+void CLagCompensation::on_fsn() { //Restore the data for lag compensation 
 
 	if (!C::Get<bool>(Vars.bMiscBacktrack))
 		return;
@@ -87,6 +87,7 @@ void CLagCompensation::on_fsn() { //data replacement can restore the old data wh
 		backtrack_data bd;
 		bd.hitboxset = hitbox_set;
 		bd.sim_time = player->GetSimulationTime();
+		bd.player = player->GetBaseEntity();
 
 		*(Vector*)((uintptr_t)player + 0xA0) = player->GetOrigin();
 		*(int*)((uintptr_t)player + 0xA68) = 0; //backup_shit 
@@ -106,39 +107,31 @@ void CLagCompensation::on_fsn() { //data replacement can restore the old data wh
 	}
 }
 
-void CLagCompensation::Run(CUserCmd* pCmd)
+void CLagCompensation::Run(CUserCmd* pCmd) //To achieve the backtrack by using restored data which allow us shoot the old data
 {
 	/*
 	 * we have much public info for that
 	 * now it is your own way gl
 	 */
 	
+	//Check Game condition and Local condition
 	if (!I::Engine->IsInGame() || !G::pLocal || !G::pLocal->IsAlive()) {
 		data.clear();
 		return;
 	}
 
-	CBaseCombatWeapon* pWeapon = G::pLocal->GetWeapon();
-
-	if (pWeapon == nullptr)
+	//To stop the lag compensation when we haven't gun
+	if (!G::pLocal->HaveWeapon())
 		return;
-
-	short nDefinitionIndex = pWeapon->GetItemDefinitionIndex();
-	CCSWeaponData* pWeaponData = I::WeaponSystem->GetWeaponData(nDefinitionIndex);
-
-	//if (!pWeaponData || !pWeaponData->IsGun()) {
-	//	LastTarget = 0;
-	//	data.clear();
-	//	return;
-	//}
 
 	if (!C::Get<bool>(Vars.bMiscBacktrack)) {
 		data.clear();
 		return;
 	}
 
+	//doing lag_compensation
 	if (Get_Best_SimulationTime(pCmd) != -1)
-		pCmd->iTickCount = Get_Best_SimulationTime(pCmd); //doing lag_compensation
+		pCmd->iTickCount = Get_Best_SimulationTime(pCmd); 
 
 }
 
@@ -210,7 +203,7 @@ int CLagCompensation::Get_Best_SimulationTime(CUserCmd* pCmd)
 		for (auto& bd : cur_data) { //Loop the vaild data of each player
 			float deltaTime = std::clamp(correct_time, 0.f, sv_maxunlag->GetFloat()) - (I::Globals->flCurrentTime - bd.sim_time); //deltaTime = clamp(value, low, high);
 
-			if (std::fabsf(deltaTime) > C::Get<float>(Vars.bMiscBacktrackticks)/1000)  // run if less than 200ms
+			if (std::fabsf(deltaTime) > C::Get<float>(Vars.bMiscBacktrackticks)/1000)  // run if less than the backtrack tick
 				continue;
 			//處理float型別的取絕對值(非負值)
 			
@@ -219,11 +212,11 @@ int CLagCompensation::Get_Best_SimulationTime(CUserCmd* pCmd)
 			//To calculate the pitch and yaw angles 
 			
 			float fov = M::fov_to_player(pCmd->angViewPoint, angles); // radius = distance from view_angles to angles
-			if (best_fov > fov /*&& (bd.sim_time > G::pLocal->GetSimulationTime() - 1)*/) { //To update the best_fov until the best_fov less than fov
+			if (best_fov > fov) { //To update the best_fov until the best_fov less than fov
 				best_fov = fov;
 				tick_count = TIME_TO_TICKS(bd.sim_time + lerp_time);
 				LastTarget = bd.hitbox_pos;
-				LastTick = bd.bone_matrix;
+
 			}
 			
 		}

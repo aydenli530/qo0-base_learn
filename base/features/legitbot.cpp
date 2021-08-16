@@ -34,6 +34,14 @@ void CLegitBot::Run(CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacket)
 	if (pWeapon == nullptr)
 		return;
 
+	short nDefinitionIndex = pWeapon->GetItemDefinitionIndex();
+	CCSWeaponData* pWeaponData = I::WeaponSystem->GetWeaponData(nDefinitionIndex);
+
+	if (!pWeaponData || !pWeaponData->IsGun()) {
+
+		return;
+	}
+
 	// disable when in-menu for more legit (lol)
 	if (W::bMainOpened)
 		return;
@@ -53,31 +61,41 @@ void CLegitBot::Run(CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacket)
 
 		Vector local_eye_pos = G::pLocal->GetEyePosition();
 
+		// If the enemy is not visible, do the scan damage 
 		if (!pLocal->IsVisible(pEntity, hitbox_pos))
 		{
 			if (!ScanDamage(pLocal, local_eye_pos, hitbox_pos))
 				continue;
 		}
 
-		Aim = M::CalcAngle(local_eye_pos, hitbox_pos);  //Calculate the pitch and yaw 
+		// Calculate the pitch and yaw 
+		Aim = M::CalcAngle(local_eye_pos, hitbox_pos);  
 
 		// get view and add punch
 		QAngle angView = pCmd->angViewPoint;
 		angView += pLocal->GetPunch() * weapon_recoil_scale->GetFloat();
 
-		float fov = M::fov_to_player(angView, Aim); // radius = distance from view_angles to angles
+		// radius = distance from view_angles to angles
+		float fov = M::fov_to_player(angView, Aim); 
 		
-		if (fov < C::Get<int>(Vars.bAimLock)) { // Run if the distance between viewangle and targert is less than aim_lock
-					
+		// Check the fov
+		if (fov < C::Get<int>(Vars.bAimLock)) { 
+			
+			// Set the target angle to the view angle for shot
 			pCmd->angViewPoint = Aim;
+
+			// Aim Lock
 			if (!C::Get<bool>(Vars.bAimSilentShot))
 			{
 				I::Engine->SetViewAngles(Aim);
 			}
+
+			// Check the condition to shot and auto shot
 			if (pLocal->CanShoot(static_cast<CWeaponCSBase*>(pWeapon)) && C::Get<bool>(Vars.bAimAutoShot))
 			{
 				pCmd->iButtons |= IN_ATTACK;
 			}
+
    //         #ifdef DEBUG_CONSOLE
 			//L::PushConsoleColor(FOREGROUND_YELLOW);
 			//std::string abc = "X " + std::to_string(Aim.x) + "Y " + std::to_string(Aim.y);
@@ -128,13 +146,16 @@ bool CLegitBot::ScanDamage(CBaseEntity* pLocal, Vector vecStart, Vector vecEnd)
 		trace = data.enterTrace;
 	}
 
+	//Traced target 
 	CBaseEntity* pEntity = trace.pHitEntity;
 
+	//Check the traced target is vailed
 	if (pEntity == nullptr || !pEntity->IsAlive() || pEntity->IsDormant() || !pEntity->IsPlayer() || pEntity->HasImmunity() || !pLocal->IsEnemy(pEntity))
 	{
 		return false;
 	}
 
+	//We can shot the target
 	return true;
 }
 

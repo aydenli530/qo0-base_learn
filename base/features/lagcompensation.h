@@ -51,7 +51,7 @@ struct backtrack_data
 	float               sim_time;
 	mstudiohitboxset_t* hitboxset;
 	Vector              hitbox_pos;
-	matrix3x4_t         bone_matrix[MAXSTUDIOBONES];//maybe
+	matrix3x4_t         bone_matrix[MAXSTUDIOBONES];
 };
 
 // @note: FYI - https://www.unknowncheats.me/forum/counterstrike-global-offensive/280912-road-perfect-aimbot-1-interpolation.html
@@ -74,9 +74,8 @@ public:
 	float latency = 0.0f;
 	float lerp_time = 0.0f;
 	
-	//Backtrack
+	//Backtrack values
 	Vector LastTarget;
-	matrix3x4_t* LastTick; 
 	std::map<int, std::deque<backtrack_data>> data = { };
 private:
 	// Values
