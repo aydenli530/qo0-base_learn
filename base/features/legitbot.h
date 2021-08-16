@@ -14,6 +14,7 @@ struct target_t
 	Vector         hitbox_pos;
 	bool           Is_Smoked;
 	bool           Is_Flashed;
+	bool           Is_Air;
 };
 
 class CLegitBot : public CSingleton<CLegitBot>
@@ -56,5 +57,5 @@ private:
 	
 	// Check
 	/* is entity valid */
-	std::vector<target_t> player = {};
+	std::vector<target_t> entity = {};
 };

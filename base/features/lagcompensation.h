@@ -73,7 +73,8 @@ public:
 	float correct_time = 0.0f;
 	float latency = 0.0f;
 	float lerp_time = 0.0f;
-	
+	int tick = 0;
+
 	//Backtrack values
 	Vector LastTarget;
 	std::map<int, std::deque<backtrack_data>> data = { };

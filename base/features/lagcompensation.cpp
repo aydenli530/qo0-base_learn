@@ -89,6 +89,7 @@ void CLagCompensation::on_fsn() { //Restore the data for lag compensation
 		bd.sim_time = player->GetSimulationTime();
 		bd.player = player->GetBaseEntity();
 
+
 		*(Vector*)((uintptr_t)player + 0xA0) = player->GetOrigin();
 		*(int*)((uintptr_t)player + 0xA68) = 0; //backup_shit 
 		*(int*)((uintptr_t)player + 0xA30) = 0;  
@@ -122,6 +123,9 @@ void CLagCompensation::Run(CUserCmd* pCmd) //To achieve the backtrack by using r
 
 	//To stop the lag compensation when we haven't gun
 	if (!G::pLocal->HaveWeapon())
+		return;
+
+	if(C::Get<float>(Vars.bMiscBacktrackticks) <=0)
 		return;
 
 	if (!C::Get<bool>(Vars.bMiscBacktrack)) {
@@ -199,29 +203,29 @@ int CLagCompensation::Get_Best_SimulationTime(CUserCmd* pCmd)
 
 		if (cur_data.empty())
 			continue;
-
+		int i = 0;
 		for (auto& bd : cur_data) { //Loop the vaild data of each player
 			float deltaTime = std::clamp(correct_time, 0.f, sv_maxunlag->GetFloat()) - (I::Globals->flCurrentTime - bd.sim_time); //deltaTime = clamp(value, low, high);
 
-			if (std::fabsf(deltaTime) > C::Get<float>(Vars.bMiscBacktrackticks)/1000)  // run if less than the backtrack tick
+			if (std::fabsf(deltaTime) > (C::Get<float>(Vars.bMiscBacktrackticks) / 1000))  // run if less than the backtrack tick
 				continue;
 			//處理float型別的取絕對值(非負值)
 			
 			angles = M::CalcAngle(local_eye_pos, bd.hitbox_pos);
 			//From the differences between the localplayer eye position and the backtrack player hitbox poistion
 			//To calculate the pitch and yaw angles 
+			i++;
 			
 			float fov = M::fov_to_player(pCmd->angViewPoint, angles); // radius = distance from view_angles to angles
-			if (best_fov > fov) { //To update the best_fov until the best_fov less than fov
-				best_fov = fov;
-				tick_count = TIME_TO_TICKS(bd.sim_time + lerp_time);
+			if (best_fov > fov -10) { //To update the best_fov until the best_fov less than fov, issue- the 10 values should be calculated to provide a more accuracy hithox_pos
 				LastTarget = bd.hitbox_pos;
-
+				tick_count = TIME_TO_TICKS(bd.sim_time + lerp_time);
+				best_fov = fov;
 			}
 			
 		}
+		tick = i;
 	}
-
 	return tick_count;
 }
 
