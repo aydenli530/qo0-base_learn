@@ -657,6 +657,7 @@ public:
 	bool					CanShoot(CWeaponCSBase* pBaseWeapon);
 	bool                    IsMoving();
 	bool                    HaveWeapon();
+	void                    Inv_bone_cache();
 	bool					IsVisible(CBaseEntity* pEntity, const Vector& vecSpot, bool bSmokeCheck = false);
 };
 

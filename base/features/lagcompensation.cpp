@@ -14,63 +14,94 @@
 #include "legitbot.h"
 #include <string>  
 
-// ==========================Bone Mask=============================
-//cached bone matrix is located at m_nForceBone + 0x1C = Bone Mask 
+// ==========================Bone Mask============================
+// 
+// cached bone matrix is located at m_nForceBone + 0x1C = Bone Mask 
 //
-bool not_target(CBaseEntity* player) {
-		if (!player || player == G::pLocal)
-			return true;
-
-		if (player->GetHealth() <= 0)
-			return true;
-
-		int entIndex = player->GetIndex();
-		return entIndex > I::Globals->nMaxClients;
-}
-
-void inv_bone_cache(CBaseEntity* player)
+//====================emplace_front vs push_front=================
+// 
+// 相当于emplace直接把原料拿进家，造了一个。而push是造好了之后，再复制到自己家里，多了复制这一步。
+// 所以emplace相对于push，使用第三种方法会更节省内存。
+// @credit Korpse - https://blog.csdn.net/Kprogram/article/details/82055673
+// 
+//====================Inv bone cache==============================
+//
+// @Credit https://www.unknowncheats.me/wiki/Counter-Strike:_Global_Offensive:Fix_for_inaccurate_SetupBones()_when_target_player_is_behind_you
+//================================================================
+void CLagCompensation::Run(CUserCmd* pCmd) //To achieve the backtrack by using restored data which allow us shoot the old data
 {
-	static DWORD addReady = (DWORD)(MEM::FindPattern(CLIENT_DLL, XorStr("80 3D ? ? ? ? ? 74 16 A1 ? ? ? ? 48 C7 81"))); // @xref: "deffered"
+	/*
+	 * we have much public info for that
+	 * now it is your own way gl
+	 */
 
-	*(int*)((uintptr_t)player + 0xA30) = I::Globals->flFrameTime; //we'll skip occlusion checks now
-	*(int*)((uintptr_t)player + 0xA28) = 0;//clear occlusion flags
+	 // Check Game condition and Local condition
+	if (!I::Engine->IsInGame() || !G::pLocal || !G::pLocal->IsAlive()) {
+		data.clear();
+		return;
+	}
 
-	unsigned long model_bone_counter = **(unsigned long**)(addReady + 10);
-	*(unsigned int*)((DWORD)player + 0x2924) = 0xFF7FFFFF; // m_flLastBoneSetupTime = -FLT_MAX;
-	*(unsigned int*)((DWORD)player + 0x2690) = (model_bone_counter - 1); // m_iMostRecentModelBoneCounter = g_iModelBoneCounter - 1;
+	// Check Backtrack tick and lancher of backtrack
+	if (!C::Get<bool>(Vars.bMiscBacktrack) ||( C::Get<float>(Vars.bMiscBacktrackticks) <= 0)) {
+		data.clear();
+		return;
+	}
+
+	// To stop the lag compensation when we haven't gun
+	if (!G::pLocal->HaveWeapon())
+		return;
+
+	//Find Correct time
+	Get_Correct_Time();
+
+	//doing lag_compensation
+	if (Get_Best_SimulationTime(pCmd) != -1)
+		pCmd->iTickCount = Get_Best_SimulationTime(pCmd);
+
 }
 
 void CLagCompensation::on_fsn() { //Restore the data for lag compensation 
 
-	if (!C::Get<bool>(Vars.bMiscBacktrack))
+	if (!C::Get<bool>(Vars.bMiscBacktrack) || (C::Get<float>(Vars.bMiscBacktrackticks) <= 0)) {
+		data.clear();
 		return;
+	}
 
-	CBaseEntity* player;
-	static CConVar* sv_maxunlag = I::ConVar->FindVar(XorStr("sv_maxunlag")); //Maximum lag compensation in seconds
+	//Maximum lag compensation in seconds
+	static CConVar* sv_maxunlag = I::ConVar->FindVar(XorStr("sv_maxunlag")); 
+	Sv_maxunlag = sv_maxunlag->GetFloat();
+
 	for (int i = 1; i <= I::Globals->nMaxClients; ++i) {
-		player = I::ClientEntityList->Get<CBaseEntity>(i);
+		CBaseEntity* player = I::ClientEntityList->Get<CBaseEntity>(i);
 
 
 		if (player == nullptr || !player->IsPlayer() || player->IsDormant() || !player->IsAlive() || player->HasImmunity() || !G::pLocal->IsEnemy(player)){
 			if (data.count(i) > 0)
-				data.erase(i); continue; //刪除 vector 中一個或多個元素。		
+				data.erase(i); continue; // Delete more than one data 	
 		}
 
 		auto& cur_data = data[i]; //& = 會修改到data
 		if (!cur_data.empty()) {
-			auto& front = cur_data.front(); //回傳 vector 第一個元素的值
 
-			if (front.sim_time == player->GetSimulationTime()) //No difference between the record and the player
+			// Get the data at the begin
+			auto& front = cur_data.front(); 
+
+			//No difference between the record and the player
+			if (front.sim_time == player->GetSimulationTime()) 
 				continue;
 
 			while (!cur_data.empty()) {
-				auto& back = cur_data.back(); //回傳 vector 最尾元素的值
-				float deltaTime = std::clamp(correct_time, 0.f, sv_maxunlag->GetFloat()) - (I::Globals->flCurrentTime - back.sim_time);
 
-				if (std::fabsf(deltaTime) <= 0.2f) //run if large than 200ms
+				//Get the data at the end
+				auto& back = cur_data.back(); 
+				float deltaTime = std::clamp(correct_time, 0.f, Sv_maxunlag) - (I::Globals->flCurrentTime - back.sim_time);
+				
+				//run if large than 200ms
+				if (std::fabsf(deltaTime) <= 0.2f) 
 					break;
-				cur_data.pop_back(); //delete the new data and store the old data
-				//刪除 vector 最尾端的元素。 
+
+				//delete the data at the end
+				cur_data.pop_back(); 
 			}
 		}
 
@@ -89,62 +120,41 @@ void CLagCompensation::on_fsn() { //Restore the data for lag compensation
 		bd.sim_time = player->GetSimulationTime();
 		bd.player = player->GetBaseEntity();
 
+		//Origin
+		//*(Vector*)((uintptr_t)player + 0xA0) = player->GetOrigin();
+		// the m_vecOrigin netvar is the uninterpolated origin, AbsOrigin is their interpolated origin
+		player->SetAbsOrigin(player->GetOrigin());
 
-		*(Vector*)((uintptr_t)player + 0xA0) = player->GetOrigin();
-		*(int*)((uintptr_t)player + 0xA68) = 0; //backup_shit 
+		//Last_animation_framecount  
+		*(int*)((uintptr_t)player + 0xA68) = 0; 
 		*(int*)((uintptr_t)player + 0xA30) = 0;  
-		inv_bone_cache(player);
-		player->SetupBones(bd.bone_matrix, MAXSTUDIOBONES, BONE_USED_BY_ANYTHING, I::Globals->flCurrentTime); //save the bone of the backtrack player
-		bd.hitbox_pos = M::VectorTransform(hitbox_center, bd.bone_matrix[hitbox_pos->iBone]); //output to bd.hitbox_pos
-		data[i].push_front(bd); //insert the old data to the begin 
 
-		//將元素從前面推入列表。在當前第一個元素和容器大小增加1之前，將新值插入到列表的開頭。
+		// Fix PVS on networked players
+		player->Inv_bone_cache();
+
+		//save the bone of the backtrack player
+		player->SetupBones(bd.bone_matrix, MAXSTUDIOBONES, BONE_USED_BY_ANYTHING, I::Globals->flCurrentTime); 
+		
+		//output to bd.hitbox_pos
+		bd.hitbox_pos = M::VectorTransform(hitbox_center, bd.bone_matrix[hitbox_pos->iBone]); 
+
+		//insert the old data at the begin 
+		data[i].emplace_front(bd); 
+
 		//example
 		/*
 		  Input:list list{1, 2, 3, 4, 5};
-		  list.push_front(6);
+		  list.emplace_front(6);
 		  Output:6, 1, 2, 3, 4, 5
 		*/
 	}
 }
 
-void CLagCompensation::Run(CUserCmd* pCmd) //To achieve the backtrack by using restored data which allow us shoot the old data
+void CLagCompensation::Get_Correct_Time()
 {
-	/*
-	 * we have much public info for that
-	 * now it is your own way gl
-	 */
-	
-	//Check Game condition and Local condition
-	if (!I::Engine->IsInGame() || !G::pLocal || !G::pLocal->IsAlive()) {
-		data.clear();
-		return;
-	}
-
-	//To stop the lag compensation when we haven't gun
-	if (!G::pLocal->HaveWeapon())
-		return;
-
-	if(C::Get<float>(Vars.bMiscBacktrackticks) <=0)
-		return;
-
-	if (!C::Get<bool>(Vars.bMiscBacktrack)) {
-		data.clear();
-		return;
-	}
-
-	//doing lag_compensation
-	if (Get_Best_SimulationTime(pCmd) != -1)
-		pCmd->iTickCount = Get_Best_SimulationTime(pCmd); 
-
-}
-
-int CLagCompensation::Get_Best_SimulationTime(CUserCmd* pCmd)
-{
-
 	//cvars
 
-	static CConVar* sv_maxunlag = I::ConVar->FindVar(XorStr("sv_maxunlag"));
+	//static CConVar* sv_maxunlag = I::ConVar->FindVar(XorStr("sv_maxunlag"));
 	//This console command sets the maximum lag compensation in seconds.
 
 	static CConVar* sv_minupdaterate = I::ConVar->FindVar("sv_minupdaterate");
@@ -170,7 +180,8 @@ int CLagCompensation::Get_Best_SimulationTime(CUserCmd* pCmd)
 
 	static CConVar* cl_updaterate = I::ConVar->FindVar("cl_updaterate");
 	//This command is used to set the number of packets per second of updates you request from the server.
-
+	
+	
 	float updaterate = cl_updaterate->GetFloat();
 	float minupdaterate = sv_minupdaterate->GetFloat();
 	float maxupdaterate = sv_maxupdaterate->GetFloat();
@@ -183,10 +194,24 @@ int CLagCompensation::Get_Best_SimulationTime(CUserCmd* pCmd)
 	if (lerp_ratio == 0.0f) lerp_ratio = 1.0f;
 	float update_rate = std::clamp(updaterate, minupdaterate, maxupdaterate);
 	INetChannelInfo* pNetChannelInfo = I::Engine->GetNetChannelInfo();
-	lerp_time = std::fmaxf(lerp_amount, lerp_ratio / update_rate); //返回两个浮点参数中较大的一个,将NaN作为缺失数据处理(在NaN和数值之间,选择数值)。
+	lerp_time = std::fmaxf(lerp_amount, lerp_ratio / update_rate); // Retuen the maximum value between two values with float type
 	latency = pNetChannelInfo->GetLatency(FLOW_OUTGOING) + pNetChannelInfo->GetLatency(FLOW_INCOMING);
 	correct_time = latency + lerp_time;
+}
 
+bool CLagCompensation::Get_Correct_Tick(backtrack_data &bd)
+{
+	float deltaTime = std::clamp(correct_time, 0.f, Sv_maxunlag) - (I::Globals->flCurrentTime - bd.sim_time); //deltaTime = clamp(value, low, high);
+	
+	// Get the absolue values with float type
+	if (std::fabsf(deltaTime) > (C::Get<float>(Vars.bMiscBacktrackticks) / 1000))  // run if less than the backtrack tick
+		return false;
+
+		return true;
+}
+
+int CLagCompensation::Get_Best_SimulationTime(CUserCmd* pCmd)
+{
 	Vector local_eye_pos = G::pLocal->GetEyePosition();
 	QAngle angles;
 	int tick_count = -1;
@@ -203,22 +228,28 @@ int CLagCompensation::Get_Best_SimulationTime(CUserCmd* pCmd)
 
 		if (cur_data.empty())
 			continue;
-		int i = 0;
-		for (auto& bd : cur_data) { //Loop the vaild data of each player
-			float deltaTime = std::clamp(correct_time, 0.f, sv_maxunlag->GetFloat()) - (I::Globals->flCurrentTime - bd.sim_time); //deltaTime = clamp(value, low, high);
 
-			if (std::fabsf(deltaTime) > (C::Get<float>(Vars.bMiscBacktrackticks) / 1000))  // run if less than the backtrack tick
+		int i = 0;
+
+		//Loop the vaild data of each player
+		for (auto& bd : cur_data) { 
+
+			if (!Get_Correct_Tick(bd))
 				continue;
-			//處理float型別的取絕對值(非負值)
-			
-			angles = M::CalcAngle(local_eye_pos, bd.hitbox_pos);
+
+			i++;
+
 			//From the differences between the localplayer eye position and the backtrack player hitbox poistion
 			//To calculate the pitch and yaw angles 
-			i++;
-			
+			angles = M::CalcAngle(local_eye_pos, bd.hitbox_pos);
+
 			float fov = M::fov_to_player(pCmd->angViewPoint, angles); // radius = distance from view_angles to angles
 			if (best_fov > fov -10) { //To update the best_fov until the best_fov less than fov, issue- the 10 values should be calculated to provide a more accuracy hithox_pos
 				LastTarget = bd.hitbox_pos;
+
+				// Add cl_interp on to the tickcount is to bypass the interpolation created ticks for ultimate accuracy
+				// @credit SenatorII - https://www.unknowncheats.me/forum/counterstrike-global-offensive/289641-aimbot-interpolation.html
+			    // un-interpolated tick
 				tick_count = TIME_TO_TICKS(bd.sim_time + lerp_time);
 				best_fov = fov;
 			}

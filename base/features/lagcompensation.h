@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 // used: std::deque
 #include <deque>
 // used: std::map
@@ -55,7 +55,8 @@ struct backtrack_data
 };
 
 // @note: FYI - https://www.unknowncheats.me/forum/counterstrike-global-offensive/280912-road-perfect-aimbot-1-interpolation.html
-
+// @note deque -  容器也擅长在序列尾部添加或删除元素（时间复杂度为O(1)），而不擅长在序列中间添加或删除元素，还擅长在序列头部添加或删除元素
+// @credit biancheng - http://c.biancheng.net/view/6860.html
 class CLagCompensation : public CSingleton<CLagCompensation>
 {
 public:
@@ -63,6 +64,8 @@ public:
 	void Run(CUserCmd* pCmd);
 	void on_fsn();
 	int Get_Best_SimulationTime(CUserCmd* pCmd);
+	void Get_Correct_Time();
+	bool Get_Correct_Tick(backtrack_data& bd);
 
 	// Main
 	void UpdateIncomingSequences(INetChannel* pNetChannel);
@@ -78,6 +81,9 @@ public:
 	//Backtrack values
 	Vector LastTarget;
 	std::map<int, std::deque<backtrack_data>> data = { };
+
+    //Cvars
+	float Sv_maxunlag = 0.0f;
 private:
 	// Values
 	std::deque<SequenceObject_t> vecSequences = { };

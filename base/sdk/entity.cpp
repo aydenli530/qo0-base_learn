@@ -190,6 +190,19 @@ void CBaseEntity::ModifyEyePosition(CCSGOPlayerAnimState* pAnimState, Vector* ve
 	}
 }
 
+void CBaseEntity::Inv_bone_cache()
+{
+	static DWORD addReady = (DWORD)(MEM::FindPattern(CLIENT_DLL, XorStr("80 3D ? ? ? ? ? 74 16 A1 ? ? ? ? 48 C7 81"))); // @xref: "deffered"
+
+	//fix the invisible player issues 
+	*(int*)((uintptr_t)this + 0xA30) = (int)I::Globals->flFrameTime; //we'll skip occlusion checks now
+	*(int*)((uintptr_t)this + 0xA28) = 0;//clear occlusion flags
+
+	unsigned long model_bone_counter = **(unsigned long**)(addReady + 10);
+	*(unsigned int*)((DWORD)this + 0x2924) = 0xFF7FFFFF; // m_flLastBoneSetupTime = -FLT_MAX;
+	*(unsigned int*)((DWORD)this + 0x2690) = (model_bone_counter - 1); // m_iMostRecentModelBoneCounter = g_iModelBoneCounter - 1;
+}
+
 void CBaseEntity::PostThink()
 {
 	// @ida postthink: 56 8B 35 ? ? ? ? 57 8B F9 8B CE 8B 06 FF 90 ? ? ? ? 8B 07

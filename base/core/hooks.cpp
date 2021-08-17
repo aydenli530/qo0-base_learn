@@ -429,7 +429,7 @@ void FASTCALL H::hkFrameStageNotify(IBaseClientDll* thisptr, int edx, EClientFra
 		 * received all packets, now do interpolation, prediction, etc
 		 * e.g. backtrack stuff
 		 */
-
+		CLagCompensation::Get().on_fsn();
 		break;
 	}
 	case FRAME_RENDER_START:
@@ -438,9 +438,6 @@ void FASTCALL H::hkFrameStageNotify(IBaseClientDll* thisptr, int edx, EClientFra
 		 * start rendering the scene
 		 * e.g. remove visual punch, thirdperson, other render/update stuff
 		 */
-
-		CLagCompensation::Get().on_fsn();
-
 		 // set max flash alpha
 		*pLocal->GetFlashMaxAlpha() = C::Get<bool>(Vars.bWorld) ? C::Get<int>(Vars.iWorldMaxFlash) * 2.55f : 255.f;
 

@@ -406,8 +406,6 @@ bool CVisuals::Chams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const Dr
 				if (C::Get<float>(Vars.bMiscBacktrackticks) <= 0)
 					return false;
 
-				static CConVar* sv_maxunlag = I::ConVar->FindVar(XorStr("sv_maxunlag"));
-
 				//Only draw the backtrack cham for the Enemy
 				if(!pLocal->IsEnemy(pEntity))
 					return false;
@@ -428,12 +426,6 @@ bool CVisuals::Chams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const Dr
 					//To loop the Record data of each player
 					for (int i = 1; i < bt_data.size(); i++) // i = 1 to 25
 					{
-
-						//float deltaTime = std::clamp(CLagCompensation::Get().correct_time, 0.f, sv_maxunlag->GetFloat()) - (I::Globals->flCurrentTime - bt_data.at(i).sim_time); //deltaTime = clamp(value, low, high);
-
-						//if (std::fabsf(deltaTime) > C::Get<float>(Vars.bMiscBacktrackticks) / 1000)  // run if less than the backtrack tick
-						//	return false;
-
 						//To prevent the fps drop, so only draw the record data of the player with the last backtrack tick
 						if ( i == CLagCompensation::Get().tick && bt_data.at(i).player->IsMoving()) {
 
