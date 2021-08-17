@@ -24,7 +24,7 @@
 // 所以emplace相对于push，使用第三种方法会更节省内存。
 // @credit Korpse - https://blog.csdn.net/Kprogram/article/details/82055673
 // 
-//====================Inv bone cache==============================
+//==========================PSV FIX==============================
 //
 // @Credit https://www.unknowncheats.me/wiki/Counter-Strike:_Global_Offensive:Fix_for_inaccurate_SetupBones()_when_target_player_is_behind_you
 //================================================================
@@ -120,21 +120,28 @@ void CLagCompensation::on_fsn() { //Restore the data for lag compensation
 		bd.sim_time = player->GetSimulationTime();
 		bd.player = player->GetBaseEntity();
 
-		//Origin
-		//*(Vector*)((uintptr_t)player + 0xA0) = player->GetOrigin();
-		// the m_vecOrigin netvar is the uninterpolated origin, AbsOrigin is their interpolated origin
+		// Original
+		// Store more things for animation as desync
+		Vector abs_origin = player->GetAbsOrigin();
+		QAngle abs_angle = player->GetAbsAngles();
+		Vector Vec = player->GetVelocity();
+		int m_flags = player->GetFlags();
 		player->SetAbsOrigin(player->GetOrigin());
 
 		//Last_animation_framecount  
-		*(int*)((uintptr_t)player + 0xA68) = 0; 
-		*(int*)((uintptr_t)player + 0xA30) = 0;  
+		//*(int*)((uintptr_t)player + 0xA68) = 0; 
+		//*(int*)((uintptr_t)player + 0xA30) = 0;  
 
 		// Fix PVS on networked players
 		player->Inv_bone_cache();
 
-		//save the bone of the backtrack player
+		//Set up the bone of the backtrack player
 		player->SetupBones(bd.bone_matrix, MAXSTUDIOBONES, BONE_USED_BY_ANYTHING, I::Globals->flCurrentTime); 
-		
+
+		//Restore
+		player->SetAbsOrigin(abs_origin);
+		player->SetAbsAngles(abs_angle);
+
 		//output to bd.hitbox_pos
 		bd.hitbox_pos = M::VectorTransform(hitbox_center, bd.bone_matrix[hitbox_pos->iBone]); 
 

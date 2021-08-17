@@ -268,7 +268,7 @@ void T::LegitBot()
 			}
 
 			ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(style.FramePadding.x, -1));
-			ImGui::SliderInt(XorStr("Fov##legitbot"), &C::Get<int>(Vars.bAimLock), 0, 30, "%d m");
+			ImGui::SliderInt(XorStr("Fov##legitbot"), &C::Get<int>(Vars.bAimLock), 0, 255, "%d m");
 			ImGui::Checkbox(XorStr("Silent Shot##legitbot"), &C::Get<bool>(Vars.bAimSilentShot));
 			ImGui::Checkbox(XorStr("Auto shot##legitbot"), &C::Get<bool>(Vars.bAimAutoShot));
 			ImGui::Checkbox(XorStr("Aim record##legitbot"), &C::Get<bool>(Vars.bAimRecord));
