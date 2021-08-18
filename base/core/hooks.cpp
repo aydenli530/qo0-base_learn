@@ -439,6 +439,26 @@ void FASTCALL H::hkFrameStageNotify(IBaseClientDll* thisptr, int edx, EClientFra
 		 * e.g. remove visual punch, thirdperson, other render/update stuff
 		 */
 		 // set max flash alpha
+	
+        // PVS fix - Fix for inaccurate SetupBones() when target player is behind you
+		// C_CSPlayer::SetupBones() is a functions which wraps C_BaseAnimating::SetupBones(). There is an other function wich gets called there
+		// @Credit https://www.unknowncheats.me/wiki/Counter-Strike:_Global_Offensive:Fix_for_inaccurate_SetupBones()_when_target_player_is_behind_you
+		for (int i = 1; i <= I::Globals->nMaxClients; i++)
+		{
+			CBaseEntity* player = I::ClientEntityList->Get<CBaseEntity>(i);
+			if (player == G::pLocal || !player) continue;
+
+			// Set lastOcclusionCheck to the latest framecount every frame --> game will skip the Occlusion checks
+			// LastOcclusionCheck = g_pGloalVars->framecount 
+			*(int*)((uintptr_t)player + 0xA30) = (int)I::Globals->flFrameTime;
+
+			// Occlusion flags get resetted here - clear occlusion flags
+			// --> fixes SetupBones to work properly
+			// 0x1 = distance > 400F  0x2 = player is behind us
+			*(int*)((uintptr_t)player + 0xA28) = 0;
+			
+		}
+
 		*pLocal->GetFlashMaxAlpha() = C::Get<bool>(Vars.bWorld) ? C::Get<int>(Vars.iWorldMaxFlash) * 2.55f : 255.f;
 
 		// no draw smoke

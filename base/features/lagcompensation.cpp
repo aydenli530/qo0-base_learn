@@ -24,9 +24,14 @@
 // 所以emplace相对于push，使用第三种方法会更节省内存。
 // @credit Korpse - https://blog.csdn.net/Kprogram/article/details/82055673
 // 
-//==========================PSV FIX==============================
-//
-// @Credit https://www.unknowncheats.me/wiki/Counter-Strike:_Global_Offensive:Fix_for_inaccurate_SetupBones()_when_target_player_is_behind_you
+//====================InvBoneCache================================
+// 
+// you don't need to invalidate bone cache after setting absorigin, it's as simple as
+// setorigin(uninterpolated) -> setupbones() -> setorigin(original)
+// either way just remember you will need to fix animations still after using this method
+// 
+// instead of using InvBoneCache
+// overwrite bonecache -> run your traces -> restore bonecache
 //================================================================
 void CLagCompensation::Run(CUserCmd* pCmd) //To achieve the backtrack by using restored data which allow us shoot the old data
 {
@@ -120,22 +125,27 @@ void CLagCompensation::on_fsn() { //Restore the data for lag compensation
 		bd.sim_time = player->GetSimulationTime();
 		bd.player = player->GetBaseEntity();
 
-		// Original
-		// Store more things for animation as desync
+		// Store
+		// Store more things for animation as desync 
 		Vector abs_origin = player->GetAbsOrigin();
 		QAngle abs_angle = player->GetAbsAngles();
 		Vector Vec = player->GetVelocity();
 		int m_flags = player->GetFlags();
+
+		//Before we save bones, we must set up player animations, bones, etc to use non-interpolated data here
 		player->SetAbsOrigin(player->GetOrigin());
 
-		//Last_animation_framecount  
+		// ShouldSkipAnimFrame-Last_animation_framecount for desync cham
 		//*(int*)((uintptr_t)player + 0xA68) = 0; 
+		
+		// LastOcclusionCheck
 		//*(int*)((uintptr_t)player + 0xA30) = 0;  
 
-		// Fix PVS on networked players
-		player->Inv_bone_cache();
+		// Calling invalidatebonecache allows the entity to properly be “scanned”
+		// Resets the entity's bone cache values in order to prepare for a model change.
+		//player->Inv_bone_cache();
 
-		//Set up the bone of the backtrack player
+		// Set up the bone of the backtrack player
 		player->SetupBones(bd.bone_matrix, MAXSTUDIOBONES, BONE_USED_BY_ANYTHING, I::Globals->flCurrentTime); 
 
 		//Restore

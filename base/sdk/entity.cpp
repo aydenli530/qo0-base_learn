@@ -194,9 +194,9 @@ void CBaseEntity::Inv_bone_cache()
 {
 	static DWORD addReady = (DWORD)(MEM::FindPattern(CLIENT_DLL, XorStr("80 3D ? ? ? ? ? 74 16 A1 ? ? ? ? 48 C7 81"))); // @xref: "deffered"
 
-	//fix the invisible player issues 
-	*(int*)((uintptr_t)this + 0xA30) = (int)I::Globals->flFrameTime; //we'll skip occlusion checks now
-	*(int*)((uintptr_t)this + 0xA28) = 0;//clear occlusion flags
+	////fix the invisible player issues 
+	//*(int*)((uintptr_t)this + 0xA30) = (int)I::Globals->flFrameTime; //we'll skip occlusion checks now
+	//*(int*)((uintptr_t)this + 0xA28) = 0;//clear occlusion flags
 
 	unsigned long model_bone_counter = **(unsigned long**)(addReady + 10);
 	*(unsigned int*)((DWORD)this + 0x2924) = 0xFF7FFFFF; // m_flLastBoneSetupTime = -FLT_MAX;
