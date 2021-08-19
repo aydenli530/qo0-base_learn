@@ -12,6 +12,8 @@
 #include "../core/interfaces.h"
 // used: firebullet data
 #include "autowall.h"
+// used: backtracking
+#include "lagcompensation.h"
 
 void CTriggerBot::Run(CUserCmd* pCmd, CBaseEntity* pLocal)
 {

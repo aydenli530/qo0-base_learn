@@ -403,9 +403,6 @@ bool CVisuals::Chams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const Dr
 				if (!C::Get<bool>(Vars.bMiscBacktrack)) 
 					return false;
 
-				if (C::Get<float>(Vars.bMiscBacktrackticks) <= 0)
-					return false;
-
 				//Only draw the backtrack cham for the Enemy
 				if(!pLocal->IsEnemy(pEntity))
 					return false;

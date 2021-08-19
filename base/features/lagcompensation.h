@@ -77,15 +77,17 @@ class CLagCompensation : public CSingleton<CLagCompensation>
 public:
 	// Get
 	void Get_Correct_Time();
-	bool Get_Correct_Tick(backtrack_data& bd);
 	void Run(CUserCmd* pCmd);
-	void on_fsn();
 	int Get_Best_SimulationTime(CUserCmd* pCmd);
 
 	// Source sdk 2013
 	void FrameUpdatePostEntityThink();
 	bool IsTickValid(int tick);
 	
+	bool StartLagCompensation(CBaseEntity* player);
+	bool FindViableRecord(CBaseEntity* player, backtrack_data* record);
+	void FinishLagCompensation(CBaseEntity* player);
+
 	// Main
 	void UpdateIncomingSequences(INetChannel* pNetChannel);
 	void ClearIncomingSequences();
@@ -100,10 +102,8 @@ public:
 	//Backtrack values
 	Vector LastTarget;
 	std::map<int, std::deque<backtrack_data>> data = { };
-
-    //Cvars
-	float Sv_maxunlag = 0.0f;
-
+	//pair是将2个数据组合成一组数据，当需要这样的需求时就可以使用pair，如stl中的map就是将key和value放在一起来保存。
+	std::pair<backtrack_data, backtrack_data> m_RestoreLagRecord[64]; // Used to restore/change
 	inline void ClearHistory()
 	{
 		for (int i = 0; i < I::Globals->nMaxClients; i++)

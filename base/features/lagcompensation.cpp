@@ -29,7 +29,9 @@
 // 
 // instead of using InvBoneCache
 // overwrite bonecache -> run your traces -> restore bonecache
-//================================================================
+// 
+//============================================================Source-sdk-2013================================================
+// @ credit Gladiatorcheatz - v2.1
 void CLagCompensation::Run(CUserCmd* pCmd) //To achieve the backtrack by using restored data which allow us shoot the old data
 {
 	/*
@@ -44,7 +46,7 @@ void CLagCompensation::Run(CUserCmd* pCmd) //To achieve the backtrack by using r
 	}
 
 	// Check Backtrack tick and lancher of backtrack
-	if (!C::Get<bool>(Vars.bMiscBacktrack) ||( C::Get<float>(Vars.bMiscBacktrackticks) <= 0)) {
+	if (!C::Get<bool>(Vars.bMiscBacktrack)) {
 		data.clear();
 		return;
 	}
@@ -62,16 +64,16 @@ void CLagCompensation::Run(CUserCmd* pCmd) //To achieve the backtrack by using r
 
 }
 
-void CLagCompensation::on_fsn() { //Restore the data for lag compensation 
+void CLagCompensation::FrameUpdatePostEntityThink() { //Restore the data for lag compensation 
 
-	if (!C::Get<bool>(Vars.bMiscBacktrack) || (C::Get<float>(Vars.bMiscBacktrackticks) <= 0)) {
-		data.clear();
+	// Enables player lag compensation
+	static CConVar* sv_unlag = I::ConVar->FindVar(XorStr("sv_unlag"));
+
+	if ((I::Globals->nMaxClients <= 1) || !sv_unlag->GetBool() || !C::Get<bool>(Vars.bMiscBacktrack))
+	{
+		ClearHistory();
 		return;
 	}
-
-	//Maximum lag compensation in seconds
-	static CConVar* sv_maxunlag = I::ConVar->FindVar(XorStr("sv_maxunlag")); 
-	Sv_maxunlag = sv_maxunlag->GetFloat();
 
 	for (int i = 1; i <= I::Globals->nMaxClients; ++i) {
 		CBaseEntity* player = I::ClientEntityList->Get<CBaseEntity>(i);
@@ -82,92 +84,42 @@ void CLagCompensation::on_fsn() { //Restore the data for lag compensation
 		}
 
 		auto& cur_data = data[i]; //& = 會修改到data
+
 		if (!cur_data.empty()) {
 
-			// Get the data at the begin
-			auto& front = cur_data.front(); 
+			auto& back = cur_data.back();
 
-			//No difference between the record and the player
-			if (front.sim_time == player->GetSimulationTime()) 
-				continue;
+			// remove tail records that are too old
+			while (!IsTickValid(TIME_TO_TICKS(back.sim_time))) {
 
-			while (!cur_data.empty()) {
+				// Delete the old record
+				cur_data.pop_back();
 
-				//Get the data at the end
-				auto& back = cur_data.back(); 
-				float deltaTime = std::clamp(correct_time, 0.f, Sv_maxunlag) - (I::Globals->flCurrentTime - back.sim_time);
-				
-				//run if large than 200ms
-				if (std::fabsf(deltaTime) <= 0.2f) 
-					break;
-
-				//delete the data at the end
-				cur_data.pop_back(); 
+				// Get the new data at the end
+				if (!cur_data.empty())
+					back = cur_data.back();
 			}
 		}
 
-		//now all the data is large than 200ms
-		auto model = player->GetModel();
-		if (!model) continue;
-		auto hdr = I::ModelInfo->GetStudioModel(model);
-		if (!hdr) continue;
-		auto hitbox_set = hdr->GetHitboxSet(player->GetHitboxSet());
-		auto hitbox_pos = hitbox_set->GetHitbox(CLegitBot::Get().Hithoxs);
-		auto hitbox_center = (hitbox_pos->vecBBMin + hitbox_pos->vecBBMax) * 0.5f;
+
+		// check if record has same simulation time
+		if (cur_data.size() > 0)
+		{
+			auto& tail = cur_data.back();
+
+			if (tail.sim_time == player->GetSimulationTime())
+				continue;
+		}
+
+		// update animations
 
 
+        // create the record
 		backtrack_data bd;
-		bd.hitboxset = hitbox_set;
-		bd.sim_time = player->GetSimulationTime();
-		bd.Recordplayer = player->GetBaseEntity();
-		bd.m_angAngles = player->GetEyeAngles();
-		bd.m_nFlags = player->GetFlags();
-		bd.m_vecAbsAngle = player->GetAbsAngles();
-		bd.m_vecAbsOrigin = player->GetAbsOrigin();
-		bd.m_vecOrigin = player->GetOrigin();
-		bd.m_vecMax = player->GetCollideable()->OBBMaxs();
-		bd.m_vecMins = player->GetCollideable()->OBBMins();
+		bd.SaveRecord(player);
 
-		// Store
-		// Store more things for animation as desync 
-		//Vector abs_origin = player->GetAbsOrigin();
-		//QAngle abs_angle = player->GetAbsAngles();
-
-		//Before we save bones, we must set up player animations, bones, etc to use non-interpolated data here
-		player->SetAbsOrigin(player->GetOrigin());
-
-		// ShouldSkipAnimFrame-Last_animation_framecount for desync cham
-		//*(int*)((uintptr_t)player + 0xA68) = 0; 
-		
-		// LastOcclusionCheck
-		//*(int*)((uintptr_t)player + 0xA30) = 0;  
-
-		// Calling invalidatebonecache allows the entity to properly be “scanned”
-		// Resets the entity's bone cache values in order to prepare for a model change.
-		player->Inv_bone_cache();
-
-		// Set up the bone of the backtrack player
-		player->SetupBones(bd.bone_matrix, MAXSTUDIOBONES, BONE_USED_BY_ANYTHING, I::Globals->flCurrentTime); 
-
-		//output to bd.hitbox_pos
-		bd.hitbox_pos = M::VectorTransform(hitbox_center, bd.bone_matrix[hitbox_pos->iBone]); 
-
-		//Restore
-		player->GetSimulationTime() = bd.sim_time;
-		player->GetOrigin() = bd.m_vecOrigin;
-		player->GetFlags() = bd.m_nFlags;
-		player->SetAbsOrigin(bd.m_vecAbsOrigin);
-		player->SetAbsAngles(bd.m_vecAbsAngle);
-
-		//insert the old data at the begin 
-		data[i].emplace_front(bd); 
-
-		//example
-		/*
-		  Input:list list{1, 2, 3, 4, 5};
-		  list.emplace_front(6);
-		  Output:6, 1, 2, 3, 4, 5
-		*/
+		// add new record to player track
+		data[i].emplace_front(bd);
 	}
 }
 
@@ -220,17 +172,6 @@ void CLagCompensation::Get_Correct_Time()
 	correct_time = latency + lerp_time;
 }
 
-bool CLagCompensation::Get_Correct_Tick(backtrack_data &bd)
-{
-	float deltaTime = std::clamp(correct_time, 0.f, Sv_maxunlag) - (I::Globals->flCurrentTime - bd.sim_time); //deltaTime = clamp(value, low, high);
-	
-	// Get the absolue values with float type
-	if (std::fabsf(deltaTime) > (C::Get<float>(Vars.bMiscBacktrackticks) / 1000))  // run if less than the backtrack tick
-		return false;
-
-		return true;
-}
-
 int CLagCompensation::Get_Best_SimulationTime(CUserCmd* pCmd)
 {
 	Vector local_eye_pos = G::pLocal->GetEyePosition();
@@ -255,7 +196,10 @@ int CLagCompensation::Get_Best_SimulationTime(CUserCmd* pCmd)
 		//Loop the vaild data of each player
 		for (auto& bd : cur_data) { 
 
-			if (!Get_Correct_Tick(bd))
+			//if (!Get_Correct_Tick(bd))
+			//	continue;
+
+			if (!IsTickValid(TIME_TO_TICKS(bd.sim_time)))
 				continue;
 
 			i++;
@@ -277,87 +221,23 @@ int CLagCompensation::Get_Best_SimulationTime(CUserCmd* pCmd)
 			
 		}
 		tick = i;
+		 //#ifdef DEBUG_CONSOLE
+		 //L::PushConsoleColor(FOREGROUND_YELLOW);
+		 //std::string abc = "Tick: " + std::to_string(tick);
+		 //L::Print(abc);
+		 //L::PopConsoleColor();
+   //      #endif
 	}
 	return tick_count;
 }
 
-//============================================================Source-sdk-2013================================================
-// @ credit Gladiatorcheatz - v2.1
-
-void CLagCompensation::FrameUpdatePostEntityThink()
-{
-	// Enables player lag compensation
-	static CConVar* sv_unlag = I::ConVar->FindVar(XorStr("sv_unlag"));
-
-	if ((I::Globals->nMaxClients <= 1) || !sv_unlag->GetBool())
-	{
-		ClearHistory();
-		return;
-	}
-
-	// Iterate all active players
-	for (int i = 1; i <= I::Globals->nMaxClients; i++)
-	{
-		CBaseEntity* player = I::ClientEntityList->Get<CBaseEntity>(i);
-
-		auto& cur_data = data[i];
-
-		if (player == nullptr || !player->IsPlayer() || player->IsDormant() || !player->IsAlive() || player->HasImmunity() || !G::pLocal->IsEnemy(player)) {
-			if (cur_data.size() > 0)
-				cur_data.clear(); continue; // Delete more than one data 
-		}
-
-		if (cur_data.empty())
-			continue;
-
-		// Get the data at the end
-		auto& back = cur_data.back();
-
-		// remove tail records that are too old
-		while (!IsTickValid(TIME_TO_TICKS(back.sim_time))) {
-		
-			// Delete the old record
-			cur_data.pop_back();
-
-			// Get the new data at the end
-			if(!cur_data.empty())
-				back = cur_data.back();
-		}
-
-		// check if record has same simulation time
-		if (cur_data.size() > 0)
-		{
-			auto& tail = cur_data.back();
-
-			if (tail.sim_time == player->GetSimulationTime())
-				continue;
-		}
-
-		// update animations
-		
-
-		// create the record
-		backtrack_data bd;
-		bd.SaveRecord(player);
-
-		// Restore the record
-		player->GetSimulationTime() = bd.sim_time;
-		player->GetOrigin() = bd.m_vecOrigin;
-		player->GetFlags() = bd.m_nFlags;
-		player->SetAbsOrigin(bd.m_vecAbsOrigin);
-		player->SetAbsAngles(bd.m_vecAbsAngle);
-
-		// add new record to player track
-		data[i].emplace_front(bd);
-	}
-
-
-}
-
 bool CLagCompensation::IsTickValid(int tick) {
 	
+	//Maximum lag compensation in seconds
+	static CConVar* sv_maxunlag = I::ConVar->FindVar(XorStr("sv_maxunlag"));
+
 	//delete the data at the end
-	float deltaTime = std::clamp(correct_time, 0.f, Sv_maxunlag) - (I::Globals->flCurrentTime - TIME_TO_TICKS(tick));
+	float deltaTime = std::clamp(correct_time, 0.f, sv_maxunlag->GetFloat()) - (I::Globals->flCurrentTime - TICKS_TO_TIME(tick));
 
 	// return false if large than 0.2f
 	return std::fabsf(deltaTime) < 0.2f;
@@ -399,6 +279,22 @@ void backtrack_data::SaveRecord(CBaseEntity* player)
 	hitbox_pos = M::VectorTransform(hitbox_center, bone_matrix[hitbox->iBone]);
 
 }
+
+void CLagCompensation::FinishLagCompensation(CBaseEntity* player) {
+
+	int idx = player->GetIndex();
+	
+	// Restore the record
+	player->GetFlags() = m_RestoreLagRecord[idx].second.m_nFlags;
+	player->SetAbsOrigin(m_RestoreLagRecord[idx].second.m_vecOrigin);
+	player->SetAbsAngles(QAngle(0, m_RestoreLagRecord[idx].second.m_angAngles.y, 0));
+	player->GetCollideable()->OBBMaxs() = m_RestoreLagRecord[idx].second.m_vecMax;
+	player->GetCollideable()->OBBMins() = m_RestoreLagRecord[idx].second.m_vecMins;
+
+}
+
+
+
 
 void CLagCompensation::UpdateIncomingSequences(INetChannel* pNetChannel)
 {

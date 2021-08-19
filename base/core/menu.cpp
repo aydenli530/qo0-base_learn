@@ -550,7 +550,6 @@ void T::Miscellaneous()
 
 			ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(style.FramePadding.x, -1));
 			ImGui::Checkbox(XorStr("Backtrack"), &C::Get<bool>(Vars.bMiscBacktrack));
-			ImGui::SliderFloat(XorStr("Backtrack ticks"), &C::Get<float>(Vars.bMiscBacktrackticks), 0, 200, "%.1f ms");
 			ImGui::Checkbox(XorStr("ping spike"), &C::Get<bool>(Vars.bMiscPingSpike));
 			ImGui::SliderFloat(XorStr("latency factor"), &C::Get<float>(Vars.flMiscLatencyFactor), 0.1f, 2.0f, "%.1f second");
 			ImGui::Checkbox(XorStr("reveal ranks"), &C::Get<bool>(Vars.bMiscRevealRanks));
