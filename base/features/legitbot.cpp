@@ -19,6 +19,15 @@
 // used: firebullet data
 #include "autowall.h"
 
+
+/*
+1- Get your position
+2- Get bone head position of enemy
+3- CalcAngle
+4- Clamp
+5- Use the last one to write viewangle.
+*/
+
 void CLegitBot::Run(CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacket)
 {
 	if (!pLocal->IsAlive())
