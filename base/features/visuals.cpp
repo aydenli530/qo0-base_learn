@@ -426,8 +426,11 @@ bool CVisuals::Chams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const Dr
 					//To loop the Record data of each player
 					for (int i = 1; i < bt_data.size(); i++) // i = 1 to 25
 					{
+						if (i != CLagCompensation::Get().tick)
+							continue;
+
 						//To prevent the fps drop, so only draw the record data of the player with the last backtrack tick
-						if ( i == CLagCompensation::Get().tick && bt_data.at(i).player->IsMoving()) {
+						if (bt_data.at(i).Recordplayer->IsMoving()) {
 
 							// set Backtrack color
 							I::StudioRender->SetColorModulation(colHidden.Base().data());

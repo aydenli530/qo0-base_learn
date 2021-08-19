@@ -1,9 +1,6 @@
 ﻿#include "lagcompensation.h"
 
-// used: globals interface
-#include "../core/interfaces.h"
-// used: global variables
-#include "../global.h"
+
 // used: vector/angle calculations
 #include "../utilities/math.h"
 // used: result logging
@@ -79,7 +76,6 @@ void CLagCompensation::on_fsn() { //Restore the data for lag compensation
 	for (int i = 1; i <= I::Globals->nMaxClients; ++i) {
 		CBaseEntity* player = I::ClientEntityList->Get<CBaseEntity>(i);
 
-
 		if (player == nullptr || !player->IsPlayer() || player->IsDormant() || !player->IsAlive() || player->HasImmunity() || !G::pLocal->IsEnemy(player)){
 			if (data.count(i) > 0)
 				data.erase(i); continue; // Delete more than one data 	
@@ -123,14 +119,19 @@ void CLagCompensation::on_fsn() { //Restore the data for lag compensation
 		backtrack_data bd;
 		bd.hitboxset = hitbox_set;
 		bd.sim_time = player->GetSimulationTime();
-		bd.player = player->GetBaseEntity();
+		bd.Recordplayer = player->GetBaseEntity();
+		bd.m_angAngles = player->GetEyeAngles();
+		bd.m_nFlags = player->GetFlags();
+		bd.m_vecAbsAngle = player->GetAbsAngles();
+		bd.m_vecAbsOrigin = player->GetAbsOrigin();
+		bd.m_vecOrigin = player->GetOrigin();
+		bd.m_vecMax = player->GetCollideable()->OBBMaxs();
+		bd.m_vecMins = player->GetCollideable()->OBBMins();
 
 		// Store
 		// Store more things for animation as desync 
-		Vector abs_origin = player->GetAbsOrigin();
-		QAngle abs_angle = player->GetAbsAngles();
-		Vector Vec = player->GetVelocity();
-		int m_flags = player->GetFlags();
+		//Vector abs_origin = player->GetAbsOrigin();
+		//QAngle abs_angle = player->GetAbsAngles();
 
 		//Before we save bones, we must set up player animations, bones, etc to use non-interpolated data here
 		player->SetAbsOrigin(player->GetOrigin());
@@ -143,17 +144,20 @@ void CLagCompensation::on_fsn() { //Restore the data for lag compensation
 
 		// Calling invalidatebonecache allows the entity to properly be “scanned”
 		// Resets the entity's bone cache values in order to prepare for a model change.
-		//player->Inv_bone_cache();
+		player->Inv_bone_cache();
 
 		// Set up the bone of the backtrack player
 		player->SetupBones(bd.bone_matrix, MAXSTUDIOBONES, BONE_USED_BY_ANYTHING, I::Globals->flCurrentTime); 
 
-		//Restore
-		player->SetAbsOrigin(abs_origin);
-		player->SetAbsAngles(abs_angle);
-
 		//output to bd.hitbox_pos
 		bd.hitbox_pos = M::VectorTransform(hitbox_center, bd.bone_matrix[hitbox_pos->iBone]); 
+
+		//Restore
+		player->GetSimulationTime() = bd.sim_time;
+		player->GetOrigin() = bd.m_vecOrigin;
+		player->GetFlags() = bd.m_nFlags;
+		player->SetAbsOrigin(bd.m_vecAbsOrigin);
+		player->SetAbsAngles(bd.m_vecAbsAngle);
 
 		//insert the old data at the begin 
 		data[i].emplace_front(bd); 
@@ -277,6 +281,124 @@ int CLagCompensation::Get_Best_SimulationTime(CUserCmd* pCmd)
 	return tick_count;
 }
 
+//============================================================Source-sdk-2013================================================
+// @ credit Gladiatorcheatz - v2.1
+
+void CLagCompensation::FrameUpdatePostEntityThink()
+{
+	// Enables player lag compensation
+	static CConVar* sv_unlag = I::ConVar->FindVar(XorStr("sv_unlag"));
+
+	if ((I::Globals->nMaxClients <= 1) || !sv_unlag->GetBool())
+	{
+		ClearHistory();
+		return;
+	}
+
+	// Iterate all active players
+	for (int i = 1; i <= I::Globals->nMaxClients; i++)
+	{
+		CBaseEntity* player = I::ClientEntityList->Get<CBaseEntity>(i);
+
+		auto& cur_data = data[i];
+
+		if (player == nullptr || !player->IsPlayer() || player->IsDormant() || !player->IsAlive() || player->HasImmunity() || !G::pLocal->IsEnemy(player)) {
+			if (cur_data.size() > 0)
+				cur_data.clear(); continue; // Delete more than one data 
+		}
+
+		if (cur_data.empty())
+			continue;
+
+		// Get the data at the end
+		auto& back = cur_data.back();
+
+		// remove tail records that are too old
+		while (!IsTickValid(TIME_TO_TICKS(back.sim_time))) {
+		
+			// Delete the old record
+			cur_data.pop_back();
+
+			// Get the new data at the end
+			if(!cur_data.empty())
+				back = cur_data.back();
+		}
+
+		// check if record has same simulation time
+		if (cur_data.size() > 0)
+		{
+			auto& tail = cur_data.back();
+
+			if (tail.sim_time == player->GetSimulationTime())
+				continue;
+		}
+
+		// update animations
+		
+
+		// create the record
+		backtrack_data bd;
+		bd.SaveRecord(player);
+
+		// Restore the record
+		player->GetSimulationTime() = bd.sim_time;
+		player->GetOrigin() = bd.m_vecOrigin;
+		player->GetFlags() = bd.m_nFlags;
+		player->SetAbsOrigin(bd.m_vecAbsOrigin);
+		player->SetAbsAngles(bd.m_vecAbsAngle);
+
+		// add new record to player track
+		data[i].emplace_front(bd);
+	}
+
+
+}
+
+bool CLagCompensation::IsTickValid(int tick) {
+	
+	//delete the data at the end
+	float deltaTime = std::clamp(correct_time, 0.f, Sv_maxunlag) - (I::Globals->flCurrentTime - TIME_TO_TICKS(tick));
+
+	// return false if large than 0.2f
+	return std::fabsf(deltaTime) < 0.2f;
+	
+}
+
+void backtrack_data::SaveRecord(CBaseEntity* player)
+{
+	auto model = player->GetModel();
+	if (!model) return;
+	auto hdr = I::ModelInfo->GetStudioModel(model);
+	if (!hdr) return;
+	auto hitbox_set = hdr->GetHitboxSet(player->GetHitboxSet());
+	auto hitbox = hitbox_set->GetHitbox(CLegitBot::Get().Hithoxs);
+	auto hitbox_center = (hitbox->vecBBMin + hitbox->vecBBMax) * 0.5f;
+
+	hitboxset = hitbox_set;
+	sim_time = player->GetSimulationTime();
+	Recordplayer = player->GetBaseEntity();
+	m_angAngles = player->GetEyeAngles();
+	m_nFlags = player->GetFlags();
+	m_vecAbsAngle = player->GetAbsAngles();
+	m_vecAbsOrigin = player->GetAbsOrigin();
+	m_vecOrigin = player->GetOrigin();
+	m_vecMax = player->GetCollideable()->OBBMaxs();
+	m_vecMins = player->GetCollideable()->OBBMins();
+
+	//Before we save bones, we must set up player animations, bones, etc to use non-interpolated data here
+	player->SetAbsOrigin(player->GetOrigin());
+
+	// Calling invalidatebonecache allows the entity to properly be “scanned”
+	// Resets the entity's bone cache values in order to prepare for a model change.
+	player->Inv_bone_cache();
+
+	// Set up the bone of the backtrack player
+	player->SetupBones(bone_matrix, MAXSTUDIOBONES, BONE_USED_BY_ANYTHING, I::Globals->flCurrentTime);
+
+	//output to bd.hitbox_pos
+	hitbox_pos = M::VectorTransform(hitbox_center, bone_matrix[hitbox->iBone]);
+
+}
 
 void CLagCompensation::UpdateIncomingSequences(INetChannel* pNetChannel)
 {

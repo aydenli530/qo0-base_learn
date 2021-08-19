@@ -429,6 +429,10 @@ void FASTCALL H::hkFrameStageNotify(IBaseClientDll* thisptr, int edx, EClientFra
 		 * received all packets, now do interpolation, prediction, etc
 		 * e.g. backtrack stuff
 		 */
+		//if (C::Get<bool>(Vars.bMiscBacktrack))
+		//	CLagCompensation::Get().FrameUpdatePostEntityThink();
+
+		
 		CLagCompensation::Get().on_fsn();
 		break;
 	}

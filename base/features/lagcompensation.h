@@ -15,6 +15,10 @@
 #include "../sdk/studio.h"
 // used: cheat variables
 #include "../core/variables.h"
+// used: global variables
+#include "../global.h"
+// used: globals interface
+#include "../core/interfaces.h"
 
 #pragma region lagcompensation_definitions
 #define LAG_COMPENSATION_TELEPORTED_DISTANCE_SQR ( 64.0f * 64.0f )
@@ -47,26 +51,41 @@ struct SequenceObject_t
 
 struct backtrack_data 
 {
-	CBaseEntity*        player;
+	void                SaveRecord(CBaseEntity* player);
+	CBaseEntity*        Recordplayer;
 	float               sim_time;
 	mstudiohitboxset_t* hitboxset;
 	Vector              hitbox_pos;
+	Vector              m_vecOrigin;
+	QAngle              m_vecAbsAngle;
+	Vector              m_vecAbsOrigin;
+	QAngle              m_angAngles;
+	Vector              m_vecMins;
+	Vector              m_vecMax;
+	int                 m_nFlags;
+	Vector              m_vecVelocity;
 	matrix3x4_t         bone_matrix[MAXSTUDIOBONES];
 };
 
+//
 // @note: FYI - https://www.unknowncheats.me/forum/counterstrike-global-offensive/280912-road-perfect-aimbot-1-interpolation.html
 // @note deque -  容器也擅长在序列尾部添加或删除元素（时间复杂度为O(1)），而不擅长在序列中间添加或删除元素，还擅长在序列头部添加或删除元素
 // @credit biancheng - http://c.biancheng.net/view/6860.html
+//
 class CLagCompensation : public CSingleton<CLagCompensation>
 {
 public:
 	// Get
+	void Get_Correct_Time();
+	bool Get_Correct_Tick(backtrack_data& bd);
 	void Run(CUserCmd* pCmd);
 	void on_fsn();
 	int Get_Best_SimulationTime(CUserCmd* pCmd);
-	void Get_Correct_Time();
-	bool Get_Correct_Tick(backtrack_data& bd);
 
+	// Source sdk 2013
+	void FrameUpdatePostEntityThink();
+	bool IsTickValid(int tick);
+	
 	// Main
 	void UpdateIncomingSequences(INetChannel* pNetChannel);
 	void ClearIncomingSequences();
@@ -84,6 +103,13 @@ public:
 
     //Cvars
 	float Sv_maxunlag = 0.0f;
+
+	inline void ClearHistory()
+	{
+		for (int i = 0; i < I::Globals->nMaxClients; i++)
+			data[i].clear();
+	}
+
 private:
 	// Values
 	std::deque<SequenceObject_t> vecSequences = { };
