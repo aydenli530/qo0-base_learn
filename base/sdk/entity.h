@@ -515,7 +515,7 @@ public:
 	N_ADD_PVARIABLE_OFFSET(CBoneAccessor, GetBoneAccessor, "CBaseAnimating->m_nForceBone", 0x1C);
 	N_ADD_VARIABLE(int, GetHitboxSet, "CBaseAnimating->m_nHitboxSet");
 	N_ADD_VARIABLE(bool, IsClientSideAnimation, "CBaseAnimating->m_bClientSideAnimation");
-	N_ADD_VARIABLE(float, GetCycle, "CBaseAnimating->m_flCycle");
+	N_ADD_VARIABLE(float, GetCycle, "CBaseAnimating->m_flCycle");  // Changes the frame of the current sequence.
 
 	N_ADD_OFFSET(int, GetAnimationOverlaysCount, 0x298C);
 
@@ -607,7 +607,9 @@ public:
 		return vecPosition;
 	}
 
-	void SetSequence(int iSequence)
+	// Changes an entity's current skeletal animation sequence.
+	// If the sequence is already playing, and is not marked as a loop, it will restart.
+	void SetSequence(int iSequence)  
 	{
 		MEM::CallVFunc<void>(this, 218, iSequence);
 	}
@@ -658,6 +660,7 @@ public:
 	bool                    IsMoving();
 	bool                    HaveWeapon();
 	void                    Inv_bone_cache();
+	bool                    IsPlayerValid();
 	bool					IsVisible(CBaseEntity* pEntity, const Vector& vecSpot, bool bSmokeCheck = false);
 };
 

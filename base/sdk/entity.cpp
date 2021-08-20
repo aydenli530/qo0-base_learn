@@ -262,7 +262,13 @@ bool CBaseEntity::IsMoving()
 	return false;
 }
 
-
+bool CBaseEntity::IsPlayerValid()
+{
+	if (this == nullptr || !this->IsPlayer() || this->IsDormant() || !this->IsAlive() || this->HasImmunity() || !this->GetLocalPlayer()->IsEnemy(this)) {
+		return false;
+	}
+	return true;
+}
 
 bool CBaseEntity::IsTargetingLocal(CBaseEntity* pLocal)
 {

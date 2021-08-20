@@ -37,6 +37,13 @@ enum class EAntiAimYawType : int
 	DESYNC
 };
 
+enum class ELagCompensationType : int
+{
+	Best = 0,
+	BestNewset,
+	All
+};
+
 enum class EVisualsBoxType : int
 {
 	NONE = 0,
@@ -96,6 +103,7 @@ struct Variables_t
 	C_ADD_VARIABLE(bool, bAimSilentShot, false);
 	C_ADD_VARIABLE(bool, bAimAutoShot, false);
 	C_ADD_VARIABLE(bool, bAimRecord, false);
+	C_ADD_VARIABLE(int, bAim_Rage_Lagcompensation_Type, static_cast<int>(EVisualsBoxType::FULL));
 	C_ADD_VARIABLE(bool, bAimAutoWall, false);
 	C_ADD_VARIABLE(int, iAimMinimalDamage, 70);
 
@@ -125,7 +133,7 @@ struct Variables_t
 	C_ADD_VARIABLE(bool, bEspMainBomb, false);
 
 	// players
-	C_ADD_VARIABLE(int, iEspMainPlayerBox, static_cast<int>(EVisualsBoxType::FULL));
+	C_ADD_VARIABLE(int, iEspMainPlayerBox, static_cast<int>(ELagCompensationType::Best));
 	C_ADD_VARIABLE(Color, colEspMainBoxEnemies, Color(160, 60, 60, 255));
 	C_ADD_VARIABLE(Color, colEspMainBoxEnemiesWall, Color(200, 185, 110, 255));
 	C_ADD_VARIABLE(Color, colEspMainBoxAllies, Color(0, 200, 170, 255));

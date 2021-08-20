@@ -65,8 +65,12 @@ void CLegitBot::Run(CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacket)
 
 		if (pEntity == nullptr || !pEntity->IsPlayer() || pEntity->IsDormant() || !pEntity->IsAlive() || pEntity->HasImmunity()|| !pLocal->IsEnemy(pEntity))
 			continue;
+		Vector hitbox_pos;
 
-		Vector hitbox_pos = C::Get<bool>(Vars.bAimRecord)? CLagCompensation::Get().LastTarget : pEntity->GetHitboxPosition(Hithoxs).value();
+		if(CLagCompensation::Get().StartLagCompensation(pEntity))
+			hitbox_pos = C::Get<bool>(Vars.bAimRecord)? CLagCompensation::Get().LastTarget : pEntity->GetHitboxPosition(Hithoxs).value();
+		else
+			hitbox_pos = pEntity->GetHitboxPosition(Hithoxs).value();
 
 		Vector local_eye_pos = G::pLocal->GetEyePosition();
 

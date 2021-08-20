@@ -272,6 +272,8 @@ void T::LegitBot()
 			ImGui::Checkbox(XorStr("Silent Shot##legitbot"), &C::Get<bool>(Vars.bAimSilentShot));
 			ImGui::Checkbox(XorStr("Auto shot##legitbot"), &C::Get<bool>(Vars.bAimAutoShot));
 			ImGui::Checkbox(XorStr("Aim record##legitbot"), &C::Get<bool>(Vars.bAimRecord));
+			if(C::Get<bool>(Vars.bAimRecord))
+				ImGui::Combo(XorStr("Record Type##legithbot"), &C::Get<int>(Vars.bAim_Rage_Lagcompensation_Type), XorStr("Best\0Best & Newest\0All\0\0"));
 			ImGui::Checkbox(XorStr("Auto wall##legitbot"), &C::Get<bool>(Vars.bAimAutoWall));
 			ImGui::SliderInt(XorStr("Minimal damage##legitbot"), &C::Get<int>(Vars.iAimMinimalDamage), 1, 100, "%dhp");
 			ImGui::PopStyleVar();

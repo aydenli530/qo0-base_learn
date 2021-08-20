@@ -25,7 +25,8 @@ public:
 class Vector
 {
 public:
-	constexpr Vector(float x = 0.f, float y = 0.f, float z = 0.f) :
+	// constexpr 代表的是被修飾的變數數值編譯期 (compile-time) 已定，也無法再通過語法修改，任何對於標示為常數的變數的嘗試修改都會造成編譯器報錯。
+	constexpr Vector(float x = 0.f, float y = 0.f, float z = 0.f) :  
 		x(x), y(y), z(z) { }
 
 	constexpr Vector(const float* arrVector) :
