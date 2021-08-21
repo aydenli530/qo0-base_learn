@@ -143,7 +143,7 @@ public:
 	// Get
 	float Get_Lerp_Time();
 	void Run(CUserCmd* pCmd);
-	int Get_Tick_Count(CUserCmd* pCmd);
+	int Get_Tick_Count(CBaseEntity* player,CUserCmd* pCmd);
 
 	// Source sdk 2013
 	void FrameUpdatePostEntityThink();
@@ -170,11 +170,14 @@ public:
 	std::map<int, std::deque<LagRecord>> data = {};
 
 	// Scratchpad for determining what needs to be restored
-	std::map<int, std::deque<LagRecord>> backtrack_records = {};
+	std::deque<LagRecord> backtrack_records = {};
 
-	//pair是将2个数据组合成一组数据，当需要这样的需求时就可以使用pair，如stl中的map就是将key和value放在一起来保存。
+	// Pair是将2个数据组合成一组数据，当需要这样的需求时就可以使用pair，如stl中的map就是将key和value放在一起来保存。
 	std::pair<LagRecord, LagRecord> m_RestoreLagRecord[64]; // Used to restore/change
 	
+	// Used for various other actions where we need data of the current lag compensated player
+	std::map<int, std::deque<LagRecord>> current_record = {};
+
 	inline void ClearHistory()
 	{
 		for (int i = 0; i < I::Globals->nMaxClients; i++)

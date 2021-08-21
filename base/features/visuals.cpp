@@ -408,14 +408,14 @@ bool CVisuals::Chams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const Dr
 					return false;
 
 				//Check the vailed record data 
-				if (CLagCompensation::Get().backtrack_records.empty()) 
+				if (CLagCompensation::Get().current_record.empty())
 					return false;
 
 				//Check Record data is enough to draw the Backtrack Cham
-				if (CLagCompensation::Get().backtrack_records.count(pEntity->GetIndex()) > 0)
+				if (CLagCompensation::Get().current_record.count(pEntity->GetIndex()) > 0)
 				{
 					//To Get the Record data of each player
-					auto& bt_data = CLagCompensation::Get().backtrack_records.at(pEntity->GetIndex());
+					auto& bt_data = CLagCompensation::Get().current_record.at(pEntity->GetIndex());
 
 					if (bt_data.empty())
 						return false;

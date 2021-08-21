@@ -56,9 +56,7 @@ void CLagCompensation::Run(CUserCmd* pCmd) //To achieve the backtrack by using r
 	if (!G::pLocal->HaveWeapon())
 		return;
 
-	//doing lag_compensation
-	if (Get_Tick_Count(pCmd) != -1)
-		pCmd->iTickCount = Get_Tick_Count(pCmd);
+
 
 }
 
@@ -77,11 +75,6 @@ void CLagCompensation::FrameUpdatePostEntityThink() { //Restore the data for lag
 
 	for (int i = 1; i <= I::Globals->nMaxClients; ++i) {
 		CBaseEntity* player = I::ClientEntityList->Get<CBaseEntity>(i);
-		
-		//if (player == nullptr || !player->IsPlayer() || player->IsDormant() || !player->IsAlive() || player->HasImmunity() || !G::pLocal->IsEnemy(player)){
-		//	if (data.count(i) > 0)
-		//		data.erase(i); continue; // Delete more than one data 	
-		//}
 
 		if (!player->IsPlayerValid())
 		{
@@ -248,14 +241,17 @@ void LagRecord::SaveRecord(CBaseEntity* player)
 
 }
 
-int CLagCompensation::Get_Tick_Count(CUserCmd* pCmd)
+int CLagCompensation::Get_Tick_Count(CBaseEntity* player, CUserCmd* pCmd)
 {
+	auto& data = current_record[player->GetIndex()];
+	data = backtrack_records;
+
 	Vector local_eye_pos = G::pLocal->GetEyePosition();
 	QAngle angles;
 	int tick_count = -1;
 	float best_fov = 255.0f;
 
-	for (auto& node : backtrack_records) { //the old data
+	for (auto& node : current_record) { //the old data
 		auto& cur_data = node.second;
 
 		/*Map總共有兩個值
@@ -337,7 +333,7 @@ bool CLagCompensation::StartLagCompensation(CBaseEntity* player) {
 	auto& m_LagRecords = data[player->GetIndex()]; 
 
 	// Backtrack Records
-	auto& Records = backtrack_records[player->GetIndex()];
+	//auto& Records = backtrack_records[player->GetIndex()];
 
 	// Store the Records and Save into the second of the m_RestoreLagRecord
 	m_RestoreLagRecord[player->GetIndex()].second.SaveRecord(player);
@@ -349,7 +345,7 @@ bool CLagCompensation::StartLagCompensation(CBaseEntity* player) {
 		for (auto it : m_LagRecords)
 		{
 			if (it.m_iPriority >= 1 || (it.m_vecVelocity.Length2D() > 10.f)) // let's account for those moving fags aswell -> it's experimental and not supposed what this lagcomp mode should do
-				Records.emplace_back(it);
+				backtrack_records.emplace_back(it);
 		}
 		break;
 	}
@@ -363,23 +359,28 @@ bool CLagCompensation::StartLagCompensation(CBaseEntity* player) {
 				newest_record = it;
 			// To store more accuracy records if the m_iPriority of the records >= 1
 			if (it.m_iPriority >= 1)
-				Records.emplace_back(it);
+				backtrack_records.emplace_back(it);
 		}
-		Records.emplace_back(newest_record);
+		backtrack_records.emplace_back(newest_record);
 		break;
 	}
 	case TYPE_ALL_RECORDS:
 		// Backtrack records equal to all the records that we store in the FRAME_NET_UPDATE_END, and this will drop huge fps
-		Records = m_LagRecords;
+		backtrack_records = m_LagRecords;
 		break;
 	}
 	// Sort the backtrack records by comparing the m_iPriority
 	// Higher m_iPriority will sort at the begin
-	//std::sort(backtrack_records.begin(), backtrack_records.end(), [](const LagRecord &a,const LagRecord& b)
-	//{
-	//	return a.m_iPriority > b.m_iPriority;
-	//});
-
+	std::sort(backtrack_records.begin(), backtrack_records.end(), [](const LagRecord &a,const LagRecord& b)
+	{
+		return a.m_iPriority > b.m_iPriority;
+	});
+	     #ifdef DEBUG_CONSOLE
+		 L::PushConsoleColor(FOREGROUND_YELLOW);
+		 std::string abc = "Data:  " +  std::to_string(backtrack_records.size());
+		 L::Print(abc);
+		 L::PopConsoleColor();
+         #endif
 	return backtrack_records.size() > 0;
 
 }
