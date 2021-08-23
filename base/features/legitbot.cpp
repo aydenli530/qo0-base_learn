@@ -102,10 +102,13 @@ void CLegitBot::Run(CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacket)
 			{
 				I::Engine->SetViewAngles(Aim);
 			}
+//#ifdef DEBUG_CONSOLE
+//			L::PushConsoleColor(FOREGROUND_YELLOW);
+//			std::string abc = "working!";
+//			L::Print(abc);
+//			L::PopConsoleColor();
+//#endif
 
-			//doing lag_compensation
-			if (CLagCompensation::Get().Get_Tick_Count(pEntity,pCmd) != -1)
-				pCmd->iTickCount = CLagCompensation::Get().Get_Tick_Count(pEntity,pCmd);
 
 			// Check the condition to shot and auto shot
 			if (pLocal->CanShoot(static_cast<CWeaponCSBase*>(pWeapon)) && C::Get<bool>(Vars.bAimAutoShot))

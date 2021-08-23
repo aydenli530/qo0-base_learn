@@ -52,11 +52,13 @@ void CLagCompensation::Run(CUserCmd* pCmd) //To achieve the backtrack by using r
 		return;
 	}
 
+	//doing lag_compensation
+	if (CLagCompensation::Get().Get_Tick_Count(pCmd) != -1)
+		pCmd->iTickCount = CLagCompensation::Get().Get_Tick_Count(pCmd);
+
 	// To stop the lag compensation when we haven't gun
 	if (!G::pLocal->HaveWeapon())
 		return;
-
-
 
 }
 
@@ -201,6 +203,9 @@ void LagRecord::SaveRecord(CBaseEntity* player)
 	m_vecMax = player->GetCollideable()->OBBMaxs();
 	m_vecMins = player->GetCollideable()->OBBMins();
 
+	// For trace accuracte records
+	m_vecVelocity = player->GetVelocity();
+
 	m_nFlags = player->GetFlags();
 	Recordplayer = player->GetBaseEntity();
 
@@ -241,16 +246,14 @@ void LagRecord::SaveRecord(CBaseEntity* player)
 
 }
 
-int CLagCompensation::Get_Tick_Count(CBaseEntity* player, CUserCmd* pCmd)
+int CLagCompensation::Get_Tick_Count(CUserCmd* pCmd)
 {
-	auto& data = current_record[player->GetIndex()];
-	data = backtrack_records;
 
 	Vector local_eye_pos = G::pLocal->GetEyePosition();
 	QAngle angles;
 	int tick_count = -1;
 	float best_fov = 255.0f;
-
+	
 	for (auto& node : current_record) { //the old data
 		auto& cur_data = node.second;
 
@@ -268,9 +271,6 @@ int CLagCompensation::Get_Tick_Count(CBaseEntity* player, CUserCmd* pCmd)
 
 		//Loop the vaild data of each player
 		for (auto& bd : cur_data) {
-
-			//if (!Get_Correct_Tick(bd))
-			//	continue;
 
 			if (!IsTickValid(TIME_TO_TICKS(bd.m_flSimulationTime)))
 				continue;
@@ -294,13 +294,14 @@ int CLagCompensation::Get_Tick_Count(CBaseEntity* player, CUserCmd* pCmd)
 
 		}
 		tick = i;
-		//#ifdef DEBUG_CONSOLE
-		//L::PushConsoleColor(FOREGROUND_YELLOW);
-		//std::string abc = "Tick: " + std::to_string(tick);
-		//L::Print(abc);
-		//L::PopConsoleColor();
-  //      #endif
+#ifdef DEBUG_CONSOLE
+		L::PushConsoleColor(FOREGROUND_YELLOW);
+		std::string abc = "Tick: " + std::to_string(tick);
+		L::Print(abc);
+		L::PopConsoleColor();
+#endif
 	}
+
 	return tick_count;
 }
 
@@ -332,8 +333,7 @@ bool CLagCompensation::StartLagCompensation(CBaseEntity* player) {
 	// All Records
 	auto& m_LagRecords = data[player->GetIndex()]; 
 
-	// Backtrack Records
-	//auto& Records = backtrack_records[player->GetIndex()];
+	auto& Current_record = current_record[player->GetIndex()];
 
 	// Store the Records and Save into the second of the m_RestoreLagRecord
 	m_RestoreLagRecord[player->GetIndex()].second.SaveRecord(player);
@@ -369,18 +369,21 @@ bool CLagCompensation::StartLagCompensation(CBaseEntity* player) {
 		backtrack_records = m_LagRecords;
 		break;
 	}
+
 	// Sort the backtrack records by comparing the m_iPriority
 	// Higher m_iPriority will sort at the begin
 	std::sort(backtrack_records.begin(), backtrack_records.end(), [](const LagRecord &a,const LagRecord& b)
 	{
 		return a.m_iPriority > b.m_iPriority;
 	});
-	     #ifdef DEBUG_CONSOLE
-		 L::PushConsoleColor(FOREGROUND_YELLOW);
-		 std::string abc = "Data:  " +  std::to_string(backtrack_records.size());
-		 L::Print(abc);
-		 L::PopConsoleColor();
-         #endif
+	  //   #ifdef DEBUG_CONSOLE
+		 //L::PushConsoleColor(FOREGROUND_YELLOW);
+		 //std::string abc = "Data:  " +  std::to_string(backtrack_records.size());
+		 //L::Print(abc);
+		 //L::PopConsoleColor();
+   //      #endif
+	
+	Current_record = backtrack_records;
 	return backtrack_records.size() > 0;
 
 }

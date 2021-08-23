@@ -143,7 +143,7 @@ public:
 	// Get
 	float Get_Lerp_Time();
 	void Run(CUserCmd* pCmd);
-	int Get_Tick_Count(CBaseEntity* player,CUserCmd* pCmd);
+	int Get_Tick_Count(CUserCmd* pCmd);
 
 	// Source sdk 2013
 	void FrameUpdatePostEntityThink();
