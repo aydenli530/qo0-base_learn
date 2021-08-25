@@ -33,11 +33,6 @@ void CLegitBot::Run(CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacket)
 	if (!pLocal->IsAlive())
 		return;
 
-	static CConVar* weapon_recoil_scale = I::ConVar->FindVar(XorStr("weapon_recoil_scale"));
-
-	if (weapon_recoil_scale == nullptr)
-		return;
-
 	CBaseCombatWeapon* pWeapon = pLocal->GetWeapon();
 
 	if (pWeapon == nullptr)
@@ -179,3 +174,47 @@ bool CLegitBot::ScanDamage(CBaseEntity* pLocal, Vector vecStart, Vector vecEnd)
 	return true;
 }
 
+void CLegitBot::RecoilControlSystem(CUserCmd* pCmd, CBaseEntity* pLocal)
+{
+	static CConVar* weapon_recoil_scale = I::ConVar->FindVar(XorStr("weapon_recoil_scale"));
+
+	if (weapon_recoil_scale == nullptr)
+		return;
+
+	// Get the number of the fire shots
+	int firedShots = pLocal->GetShotsFired();
+
+	// Active Rcs when firing
+	if (pCmd->iButtons & IN_ATTACK)
+	{
+		// Get our aim  punch angle
+		Punch = pLocal->GetPunch();
+
+		// Get our aim view point
+		CurrentViewAngles = pCmd->angViewPoint;
+
+		// Active RCS after two shots
+		if (firedShots > 2)
+		{
+			// Make the aim angle more human
+			Punch *= weapon_recoil_scale->GetFloat();
+
+			// To apply the adjusted angle to the ViewAngles
+			NewViewAngles = CurrentViewAngles - (Punch - OldPunch);
+
+			// Make sure the angle is trusted
+			NewViewAngles.Normalize();
+
+			// Set the NewViewAngles to our aim view point
+			pCmd->angViewPoint = NewViewAngles;
+
+			// Store the adjusted angle
+			OldPunch = Punch;
+		}
+
+	}
+	else
+		OldPunch.Init();
+
+
+}

@@ -13,6 +13,14 @@ public:
 	constexpr QAngle(const float* arrAngles) :
 		x(arrAngles[0]), y(arrAngles[1]), z(arrAngles[2]) { }
 
+
+	void Init(float ix = 0.0f, float iy = 0.0f, float iz = 0.0f)
+	{
+		x = ix;
+		y = iy;
+		z = iz;
+	}
+
 	bool operator==(const QAngle& angBase) const
 	{
 		return this->IsEqual(angBase);

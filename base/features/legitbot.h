@@ -54,7 +54,7 @@ public:
 	
 	// Function
 	void BacktrackShot();
-	void RecoilControlSystem();
+	void RecoilControlSystem(CUserCmd* pCmd, CBaseEntity* pLocal);
 
 	// Reset
 	void Reset();
@@ -65,6 +65,11 @@ private:
 	// Main
 	/* aimbot, smooth, etc */
 	QAngle Aim;
+
+	//RCS
+	QAngle CurrentViewAngles;
+	QAngle Punch;
+	QAngle NewViewAngles;
 	QAngle Smooth;
 	QAngle OldPunch;
 
