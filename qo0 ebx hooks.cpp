@@ -1,3 +1,4 @@
+@credit: https://github.com/spirthack/CSGOSimple/blob/master/CSGOSimple/hooks.cpp
 
 bool H::Setup()
 {
