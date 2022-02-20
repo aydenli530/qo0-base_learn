@@ -42,11 +42,7 @@ void __stdcall H::hkCreateMove(int32_t iSequence, float_t flFrametime, bool bIsA
 	 * and SetLocalViewAngles for engine/prediction at the same time
 	 * cuz SetViewAngles isn't called if return false and can cause frame stuttering
 	 */
-  
-  // hm.....
-  /*
-	if (oCreateMove(thisptr, edx, flInputSampleTime, pCmd))   
-		I::Prediction->SetLocalViewAngles(pCmd->angViewPoint); */
+	I::Prediction->SetLocalViewAngles(pCmd->angViewPoint);
   
   
 	// save global cmd pointer
