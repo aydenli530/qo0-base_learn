@@ -2,7 +2,7 @@
 
 bool H::Setup()
 {
-  	if (!DTR::CreateMove_Proxy.Create(MEM::GetVFunc(I::Client, VTABLE::CREATEMOVE_PROXY), &hkCreateMove_Proxy))
+  	if (!DTR::CreateMove_Proxy.Create(MEM::GetVFunc(I::Client, VTABLE::CREATEMOVE_PROXY), &hkCreateMove_Proxy)) // CREATEMOVE_PROXY 22
 		return false;
 }
 
